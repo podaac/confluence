@@ -4,8 +4,6 @@
 
 ![Confluence Component Data Flow Diagram](diagrams/confluence-data-flow.png)
 
--
-
 ## aws infrastructure
 
 ### workflow-infrastructure
