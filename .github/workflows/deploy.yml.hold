@@ -1,0 +1,201 @@
+# Main build pipeline that verifies and deploys the software
+name: Deploy 
+# Events that trigger the workflow
+on:
+  # Trigger based on push to all branches - TODO
+  # push:
+    # branches:
+      # - 'development/**'
+      # - 'feature/**'
+      # - 'release/**'
+      # - 'main'
+    # tags-ignore:
+      # - '*'
+  # Run workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+        venue:
+            type: choice
+            description: Venue to deploy to
+            options:
+                - DEV1
+                - DEV2
+                - OPS
+        deployment:
+            type: choice
+            description: What to deploy to the venue
+            options:
+                - Infrastructure
+                - Step Function
+
+# Environment variables
+env:
+  INFRA_APP_NAME_ENV: 'confluence'
+  SFN_APP_NAME_ENV: 'confluence-sfn'
+
+jobs:
+  deploy-infrastructure:
+    if: github.event.inputs.deployment == 'Infrastructure'
+    name: Deploy Infrastructure
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    steps:
+
+      # DEV1 environment variables
+      - name: Set Environment Variables
+        if: github.event.inputs.venue == 'DEV1'
+        run: |
+          echo "TARGET_ENV=DEV1" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-dev1" >> $GITHUB_ENV
+
+      # DEV2 environment variables
+      - name: Set Environment Variables
+        if: github.event.inputs.venue == 'DEV2'
+        run: |
+          echo "TARGET_ENV=DEV2" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-dev2" >> $GITHUB_ENV
+
+      # OPS environment variables
+      - name: Set Environment Variables
+        if: github.event.inputs.venue == 'OPS'
+        run: |
+          echo "TARGET_ENV=OPS" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-ops" >> $GITHUB_ENV
+
+      # Check out GitHub repo
+      - uses: actions/checkout@v4
+
+      # SNYK IAC scan and report - TODO
+      # - name: Run Snyk IAC to test and report
+        # uses: snyk/actions/iac@master
+        # env:
+            # SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        # with:
+          # command: test
+          # args: >
+              # --org=${{ secrets.SNYK_ORG_ID }}
+              # --severity-threshold=high
+              # --report
+
+      # Configure credentials 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_{0}', env.TARGET_ENV)] }}
+          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_{0}', env.TARGET_ENV)] }}
+          aws-region: us-west-2
+          mask-aws-account-id: true
+
+      # Set up Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+      
+      - name: Define TF_VAR values
+        run: |
+          echo "TF_VAR_environment=$TARGET_ENV" >> $GITHUB_ENV
+          echo "TF_VAR_prefix=$PREFIX_ENV" >> $GITHUB_ENV
+          echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_ssh_subnet=${{ secrets['SSH_SUBNET'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_subnet_a_public_cidr=${{ secrets['PUBLIC_SUBNET'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_subnet_a_private_cidr=${{ secrets['PRIVATE_SUBNET_A'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_subnet_b_cidr=${{ secrets['PRIVATE_SUBNET_B'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_subnet_c_cidr=${{ secrets['PRIVATE_SUBNET_C'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_subnet_d_cidr=${{ secrets['PRIVATE_SUBNET_D'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_vpc_cidr=${{ secrets['VPC_CIDR'] }}" >> $GITHUB_ENV
+          echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
+
+      - name: Initialize Terraform
+        working-directory: workflow-infrastructure/
+        run: |
+          terraform init -reconfigure \
+              -backend-config="bucket=${PREFIX_ENV}-tf-state" \
+              -backend-config="key=${INFRA_APP_NAME_ENV}.tfstate" \
+              -backend-config="region=${AWS_DEFAULT_REGION}"
+
+      - name: Validate Terraform
+        working-directory: workflow-infrastructure/
+        run: terraform validate -no-color
+
+      # Deploy AWS infrastructure
+      - name: Deploy Terraform
+        working-directory: workflow-infrastructure/
+        run: terraform apply -auto-approve
+
+  deploy-step-function:
+    if: github.event.inputs.deployment == 'Step Function'
+    name: Deploy Step Function
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    steps:
+
+      # DEV1 environment variables
+      - name: Set Environment Variables
+        if: github.event.inputs.venue == 'DEV1'
+        run: |
+          echo "TARGET_ENV=DEV1" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-dev1" >> $GITHUB_ENV
+
+      # DEV2 environment variables
+      - name: Set Environment Variables
+        if: github.event.inputs.venue == 'DEV2'
+        run: |
+          echo "TARGET_ENV=DEV2" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-dev2" >> $GITHUB_ENV
+
+      # OPS environment variables
+      - name: Set Environment Variables
+        if: github.event.inputs.venue == 'OPS'
+        run: |
+          echo "TARGET_ENV=OPS" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-ops" >> $GITHUB_ENV
+
+      # Check out GitHub repo
+      - uses: actions/checkout@v4
+
+      # SNYK IAC scan and report - TODO
+      # - name: Run Snyk IAC to test and report
+        # uses: snyk/actions/iac@master
+        # env:
+            # SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        # with:
+          # command: test
+          # args: >
+              # --org=${{ secrets.SNYK_ORG_ID }}
+              # --severity-threshold=high
+              # --report
+
+      # Configure credentials 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_{0}', env.TARGET_ENV)] }}
+          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_{0}', env.TARGET_ENV)] }}
+          aws-region: us-west-2
+          mask-aws-account-id: true
+
+      # Set up Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+      
+      - name: Define TF_VAR values
+        run: |
+          echo "TF_VAR_environment=$TARGET_ENV" >> $GITHUB_ENV
+          echo "TF_VAR_prefix=$PREFIX_ENV" >> $GITHUB_ENV
+          echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
+
+      - name: Initialize Terraform
+        working-directory: workflow-step-function/
+        run: |
+          terraform init -reconfigure \
+              -backend-config="bucket=${PREFIX_ENV}-tf-state" \
+              -backend-config="key=${SFN_APP_NAME_ENV}.tfstate" \
+              -backend-config="region=${AWS_DEFAULT_REGION}"
+
+      - name: Validate Terraform
+        working-directory: workflow-step-function/
+        run: terraform validate -no-color
+
+      # Deploy AWS infrastructure
+      - name: Deploy Terraform
+        working-directory: workflow-step-function/
+        run: terraform apply -auto-approve
