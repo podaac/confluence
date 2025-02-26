@@ -6,6 +6,7 @@
 
 Confluence repositories:
 
+- Clean Up: https://github.com/podaac/confluence_clean_up
 - Combine Data:https://github.com/podaac/confluence_combine_data
 - Init Workflow: https://github.com/podaac/confluence_init_workflow
 - Input: https://github.com/podaac/confluence_input
@@ -19,6 +20,7 @@ Confluence repositories:
 - Postdiagnostics: https://github.com/podaac/confluence_postdiagnostics
 - Prediagnostics: https://github.com/podaac/confluence_prediagnostics
 - Priors: https://github.com/podaac/confluence_priors
+- Report: https://github.com/podaac/confluence_report
 - SAD: https://github.com/podaac/confluence_sad
 - Setfinder: https://github.com/podaac/confluence_setfinder
 - SoS Read: https://github.com/podaac/confluence_sos_read
