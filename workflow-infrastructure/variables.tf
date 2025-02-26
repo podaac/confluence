@@ -26,6 +26,11 @@ variable "ec2_key_pair" {
   description = "Key pair used to access EFS EC2 instances"
 }
 
+variable "sns_email_reports" {
+  type        = string
+  description = "Email address to SNS topic reports to"
+}
+
 variable "environment" {
   type        = string
   description = "The environment in which to deploy to"

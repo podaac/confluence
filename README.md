@@ -4,6 +4,8 @@
 
 ![Confluence Component Data Flow Diagram](diagrams/confluence-data-flow.png)
 
+-
+
 ## aws infrastructure
 
 ### workflow-infrastructure
@@ -34,9 +36,10 @@ Deploys AWS infrastructure and stores state in an S3 backend. This top-level ter
 
 To deploy:
 
-1. Initialize terraform: `terraform init -reconfigure -backend-config="bucket=confluence-<env>-tf-state" -backend-config="key=confluence.tfstate" -backend-config="region=us-west-2" -backend-config="profile=<named_profile>"`
-2. Plan terraform modifications: `terraform plan -var-file="conf.tfvars" -out="tfplan"`
-3. Apply terraform modifications: `terraform apply tfplan`
+1. Edit `conf.tfvars` for environment to deploy to.
+2. Initialize terraform: `terraform init -reconfigure -backend-config="bucket=confluence-<env>-tf-state" -backend-config="key=confluence.tfstate" -backend-config="region=us-west-2" -backend-config="profile=<named_profile>"`
+3. Plan terraform modifications: `terraform plan -var-file="conf.tfvars" -out="tfplan"`
+4. Apply terraform modifications: `terraform apply tfplan`
 
 `<env>` can be `dev1`, `dev2`, `dev3` or `ops`
 
@@ -55,10 +58,6 @@ Command line arguments:
 
 [1] s3_state_bucket: Name of the S3 bucket to store Terraform state in (no need for s3:// prefix)
 
-[2] terraform_state_key: Name of Terraform state key (e.g. confluence.tfstate or confluence-sfn.tfstate)
+[2] profile: Name of profile used to authenticate AWS CLI commands
 
-[3] terraform_directory: Which directory to deploy (e.g. workflow-infrastructure)
-
-Infrastructure example usage: `deploy/deploy.sh confluence-bucket-tf-state confluence.tfstate workflow-infrastructure`
-
-Step Function example usage: `deploy/deploy.sh confluence-bucket-tf-state confluence-sfn.tfstate workflow-step-function`
+Example usage: `./deploy.sh "s3-state-bucket-name" "confluence-named-profile"`

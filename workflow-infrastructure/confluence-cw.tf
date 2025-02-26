@@ -100,9 +100,9 @@ resource "aws_cloudwatch_log_group" "generate_cw_log_group_init" {
   retention_in_days = 0
 }
 
-# restart
-resource "aws_cloudwatch_log_group" "generate_cw_log_group_restart" {
-  name              = "/aws/batch/job/${var.prefix}-restart/"
+# report
+resource "aws_cloudwatch_log_group" "generate_cw_log_group_report" {
+  name              = "/aws/batch/job/${var.prefix}-report/"
   retention_in_days = 0
 }
 

@@ -236,8 +236,7 @@ resource "aws_iam_policy" "batch_job_s3_policy" {
         "Resource" : [
           "${aws_s3_bucket.aws_s3_bucket_sos.arn}",
           "${aws_s3_bucket.aws_s3_bucket_json.arn}",
-          "${aws_s3_bucket.aws_s3_bucket_config.arn}",
-          "${aws_s3_bucket.aws_s3_bucket_map.arn}"
+          "${aws_s3_bucket.aws_s3_bucket_config.arn}"
         ]
       },
       {
@@ -253,18 +252,7 @@ resource "aws_iam_policy" "batch_job_s3_policy" {
         "Resource" : [
           "${aws_s3_bucket.aws_s3_bucket_sos.arn}/*",
           "${aws_s3_bucket.aws_s3_bucket_json.arn}/*",
-          "${aws_s3_bucket.aws_s3_bucket_config.arn}/*",
-          "${aws_s3_bucket.aws_s3_bucket_map.arn}/*"
-        ]
-      },
-      {
-        "Sid" : "AllDeleteObjects",
-        "Effect" : "Allow",
-        "Action" : [
-          "s3:DeleteObject"
-        ],
-        "Resource" : [
-          "${aws_s3_bucket.aws_s3_bucket_map.arn}/*"
+          "${aws_s3_bucket.aws_s3_bucket_config.arn}/*"
         ]
       }
     ]
@@ -285,16 +273,19 @@ resource "aws_iam_policy" "batch_job_sfn_policy" {
     "Version" : "2012-10-17",
     "Statement" : [
       {
-        "Sid" : "AllowStartExecution",
+        "Sid" : "DescribeGetListMapRun",
         "Effect" : "Allow",
-        "Action" : "states:StartExecution",
-        "Resource" : "arn:aws:states:${var.aws_region}:${local.account_id}:stateMachine:${var.prefix}-workflow"
-      },
-      {
-        "Sid" : "DescribeMapRun",
-        "Effect" : "Allow",
-        "Action" : "states:DescribeMapRun",
-        "Resource" : "arn:aws:states:${var.aws_region}:${local.account_id}:mapRun:${var.prefix}-workflow/*"
+        "Action" : [
+          "states:DescribeExecution",
+          "states:DescribeMapRun",
+          "states:GetExecutionHistory",
+          "states:ListExecutions",
+          "states:ListMapRuns"
+        ],
+        "Resource" : [
+          "arn:aws:states:${var.aws_region}:${local.account_id}:mapRun:${var.prefix}-workflow/*",
+          "arn:aws:states:${var.aws_region}:${local.account_id}:execution:${var.prefix}-workflow/*"
+        ]
       }
     ]
   })
@@ -327,6 +318,34 @@ resource "aws_iam_policy" "batch_job_ssm_policy" {
           "ssm:GetParametersByPath"
         ],
         "Resource" : "arn:aws:ssm:${var.aws_region}:${local.account_id}:parameter/${var.prefix}-hydrocron-key"
+      }
+    ]
+  })
+}
+
+# # SNS Topics
+resource "aws_iam_role_policy_attachment" "batch_job_sns_role_policy" {
+  role       = aws_iam_role.batch_job_role.name
+  policy_arn = aws_iam_policy.batch_job_sns_policy.arn
+}
+
+resource "aws_iam_policy" "batch_job_sns_policy" {
+  name        = "${var.prefix}-batch-job-sns-policy"
+  description = "Amazon Batch job policy to access SNS topics"
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "AllowList",
+        "Effect" : "Allow",
+        "Action" : "sns:ListTopics",
+        "Resource" : "${aws_sns_topic.aws_sns_topic_confluence_reports.arn}"
+      },
+      {
+        "Sid" : "AllowPublish",
+        "Effect" : "Allow",
+        "Action" : "sns:Publish",
+        "Resource" : "${aws_sns_topic.aws_sns_topic_confluence_reports.arn}"
       }
     ]
   })

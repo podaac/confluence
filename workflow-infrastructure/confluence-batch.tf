@@ -221,9 +221,9 @@ resource "aws_batch_job_queue" "jq_init_workflow" {
   }
 }
 
-# # restart
-resource "aws_batch_job_queue" "jq_restart" {
-  name     = "${var.prefix}-restart"
+# # report
+resource "aws_batch_job_queue" "jq_report" {
+  name     = "${var.prefix}-report"
   state    = "ENABLED"
   priority = 10
   compute_environment_order {
