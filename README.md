@@ -4,7 +4,25 @@
 
 ![Confluence Component Data Flow Diagram](diagrams/confluence-data-flow.png)
 
--
+Confluence repositories:
+
+- Combine Data:https://github.com/podaac/confluence_combine_data
+- Init Workflow: https://github.com/podaac/confluence_init_workflow
+- Input: https://github.com/podaac/confluence_input
+- MetroMan: https://github.com/podaac/confluence_metroman
+- MetroMan Consolidation: https://github.com/podaac/confluence_metroman_consolidation
+- MOI: https://github.com/podaac/confluence_moi
+- MOMMA: https://github.com/podaac/confluence_momma
+- neoBAM: https://github.com/podaac/confluence_neobam
+- Offline: https://github.com/podaac/confluence_offline
+- Output: https://github.com/podaac/confluence_output
+- Postdiagnostics: https://github.com/podaac/confluence_postdiagnostics
+- Prediagnostics: https://github.com/podaac/confluence_prediagnostics
+- Priors: https://github.com/podaac/confluence_priors
+- SAD: https://github.com/podaac/confluence_sad
+- Setfinder: https://github.com/podaac/confluence_setfinder
+- SoS Read: https://github.com/podaac/confluence_sos_read
+- Validation: https://github.com/podaac/confluence_validation
 
 ## aws infrastructure
 
@@ -19,7 +37,6 @@ The Confluence workflow includes the following AWS service in the `workflow-infr
 - AWS S3 SoS Bucket.
 - AWS Security Groups and VPC definition.
 - AWS System Manager Parameter Store and Key Management Service.
--
 
 ### stepfunction-infrastructure
 
@@ -28,7 +45,6 @@ The Confluence workflow includes the following AWS service in the `stepfunction-
 - AWS EventBridge rule.
 - AWS Step Function state machine.
 - AWS IAM Roles & Policies.
--
 
 ## terraform
 
