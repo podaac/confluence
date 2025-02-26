@@ -36,8 +36,7 @@
                         "-p",
                         "Ref::prefix",
                         "-r",
-                        "Ref::reachsubsetfile",
-                        "-d"
+                        "Ref::reachsubsetfile"
                     ]
                 },
                 "Parameters": {
@@ -45,7 +44,16 @@
                     "reachsubsetfile.$": "$.reach_subset_file"
                 }
             },
-            "Next": "Setfinder Reach Subset"
+            "Next": "Setfinder Reach Subset",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Init Workflow Global": {
             "Type": "Task",
@@ -64,15 +72,23 @@
                 "ContainerOverrides": {
                     "Command": [
                         "-p",
-                        "Ref::prefix",
-                        "-d"
+                        "Ref::prefix"
                     ]
                 },
                 "Parameters": {
                     "prefix": "${prefix}"
                 }
             },
-            "Next": "Setfinder Global"
+            "Next": "Setfinder Global",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Setfinder Reach Subset": {
             "Type": "Map",
@@ -159,7 +175,16 @@
                 }
             },
             "Label": "setfinder_reach_subset",
-            "Next": "Combine Data Reach Subset"
+            "Next": "Combine Data Reach Subset",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Setfinder Subset Not Expanded": {
             "Type": "Map",
@@ -241,7 +266,16 @@
                 }
             },
             "Label": "setfinder_reach_subset_not_expanded",
-            "Next": "Combine Data Global"
+            "Next": "Combine Data Global",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Setfinder Global": {
             "Type": "Map",
@@ -324,7 +358,16 @@
                 }
             },
             "Label": "setfinder_global",
-            "Next": "Combine Data Global"
+            "Next": "Combine Data Global",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Combine Data Reach Subset": {
             "Type": "Task",
@@ -342,19 +385,33 @@
                 },
                 "ContainerOverrides": {
                     "Command": [
+                        "-c",
+                        "continent.json",
                         "-d",
                         "/data",
                         "-u",
                         "${prefix}-json",
-                        "-u",
-                        "${prefix}-json",
-                        "-e",
                         "-s",
-                        "16"
+                        "16",
+                        "-k",
+                        "Ref::json_bucket_key",
+                        "-e"
                     ]
+                },
+                "Parameters": {
+                    "json_bucket_key.$": "States.Format('{}-{}', $$.Execution.StartTime, $.counter)"
                 }
             },
-            "Next": "Input Reach Subset"
+            "Next": "Input Reach Subset",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Combine Data Global": {
             "Type": "Task",
@@ -379,11 +436,25 @@
                         "-u",
                         "${prefix}-json",
                         "-s",
-                        "16"
+                        "16",
+                        "-k",
+                        "Ref::json_bucket_key"
                     ]
+                },
+                "Parameters": {
+                    "json_bucket_key.$": "States.Format('{}-{}', $$.Execution.StartTime, $.counter)"
                 }
             },
-            "Next": "Combine Data Global Choice"
+            "Next": "Combine Data Global Choice",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Input Reach Subset": {
             "Type": "Map",
@@ -476,13 +547,6 @@
                     "Key": "expanded_reaches_of_interest.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "input"
-                }
-            },
             "Label": "input_reach_subset",
             "Next": "Setfinder Subset Not Expanded",
             "Catch": [
@@ -490,7 +554,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Expanded",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -586,13 +650,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "input"
-                }
-            },
             "Label": "input_global",
             "Next": "Prediagnostics",
             "Catch": [
@@ -600,7 +657,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -663,7 +720,7 @@
                             "JobName.$": "States.Format('confluence-prediagnostics-{}-{}-{}', $.version, $.counter, $.context_value.reach_id)",
                             "Parameters": {
                                 "index.$": "States.Format('{}',$.context_index)",
-                                "config_bucket": "${prefix}-config/prediagnostics"
+                                "config_bucket": "${prefix}-config"
                             }
                         },
                         "End": true,
@@ -703,13 +760,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "prediagnostics"
-                }
-            },
             "Label": "prediagnostics",
             "Next": "Priors Choice",
             "Catch": [
@@ -717,7 +767,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -817,7 +867,16 @@
                 }
             },
             "Label": "priors",
-            "Next": "Hivdi"
+            "Next": "Hivdi",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Priors GBPriors": {
             "Type": "Map",
@@ -900,7 +959,16 @@
                 }
             },
             "Label": "priors_gbpriors",
-            "Next": "Hivdi"
+            "Next": "Hivdi",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Hivdi": {
             "Type": "Map",
@@ -981,13 +1049,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "hivdi"
-                }
-            },
             "Label": "hivdi",
             "Next": "Metroman",
             "Catch": [
@@ -995,7 +1056,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1084,13 +1145,6 @@
                     "Key": "metrosets.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "metroman"
-                }
-            },
             "Label": "metroman",
             "Next": "Momma Choice",
             "Catch": [
@@ -1098,7 +1152,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1204,13 +1258,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "momma"
-                }
-            },
             "Label": "mommaConstrained",
             "Next": "Neobam",
             "Catch": [
@@ -1218,7 +1265,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1308,13 +1355,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "momma"
-                }
-            },
             "Label": "mommaUnconstrained",
             "Next": "Neobam",
             "Catch": [
@@ -1322,7 +1362,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1410,13 +1450,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "neobam"
-                }
-            },
             "Label": "neobam",
             "Next": "Sad",
             "Catch": [
@@ -1424,7 +1457,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1512,13 +1545,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "sad"
-                }
-            },
             "Label": "sad",
             "Next": "Sic4dvar",
             "Catch": [
@@ -1526,7 +1552,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1615,13 +1641,6 @@
                     "Key": "sicsets.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "sic4dvar"
-                }
-            },
             "Label": "sic4dvar",
             "Next": "Metroman Consolidation",
             "Catch": [
@@ -1629,7 +1648,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1702,7 +1721,16 @@
                 }
             },
             "Label": "metromanConsolidation",
-            "Next": "Postdiagnostics FLPE Choice"
+            "Next": "Postdiagnostics FLPE Choice",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
         },
         "Postdiagnostics FLPE Choice": {
             "Type": "Choice",
@@ -1809,13 +1837,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "postdiagnostics-flpe"
-                }
-            },
             "Label": "postdiagnostics-flpe",
             "Next": "Moi",
             "Catch": [
@@ -1823,7 +1844,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -1915,13 +1936,6 @@
                     "Key": "basin.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "moi"
-                }
-            },
             "Label": "moi",
             "Next": "Postdiagnostics MOI Choice",
             "Catch": [
@@ -1929,7 +1943,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -2039,13 +2053,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "postdiagnostics-moi"
-                }
-            },
             "Label": "postdiagnostics-moi",
             "Next": "Offline",
             "Catch": [
@@ -2053,7 +2060,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -2140,13 +2147,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "offline"
-                }
-            },
             "Label": "offline",
             "Next": "Validation",
             "Catch": [
@@ -2154,7 +2154,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -2245,13 +2245,6 @@
                     "Key": "reaches.json"
                 }
             },
-            "ResultWriter": {
-                "Resource": "arn:aws:states:::s3:putObject",
-                "Parameters": {
-                    "Bucket": "${prefix}-map-state",
-                    "Prefix": "validation"
-                }
-            },
             "Label": "validation",
             "Next": "Output",
             "Catch": [
@@ -2259,7 +2252,7 @@
                     "ErrorEquals": [
                         "States.ALL"
                     ],
-                    "Next": "Restart Choice",
+                    "Next": "Report Fail",
                     "ResultPath": "$.error"
                 }
             ]
@@ -2364,136 +2357,161 @@
                 }
             },
             "Label": "output",
+            "Next": "Report",
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "Next": "Report Fail",
+                    "ResultPath": "$.error"
+                }
+            ]
+        },
+        "Report": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::batch:submitJob.sync",
+            "ResultPath": null,
+            "Parameters": {
+                "JobName.$": "States.Format('confluence-report-{}-{}', $.version, $.counter)",
+                "JobDefinition": "arn:aws:batch:${aws_region}:${account_id}:job-definition/${prefix}-report",
+                "JobQueue": "arn:aws:batch:${aws_region}:${account_id}:job-queue/${prefix}-report",
+                "PropagateTags": true,
+                "Tags": {
+                    "name.$": "States.Format('confluence-{}-{}-{}', $.run_type, $.version, $.counter)",
+                    "job.$": "States.Format('confluence-report-{}-{}', $.version, $.counter)"
+                },
+                "ContainerOverrides": {
+                    "Command": [
+                        "-e",
+                        "Ref::execution_id",
+                        "-t",
+                        "Ref::temporal_range",
+                        "-s",
+                        "Ref::sos_bucket",
+                        "-r",
+                        "Ref::run_type",
+                        "-b",
+                        "Ref::json_bucket",
+                        "-k",
+                        "Ref::json_bucket_key"
+                    ]
+                },
+                "Parameters": {
+                    "execution_id.$": "$$.Execution.Id",
+                    "temporal_range.$": "$.temporal_range",
+                    "sos_bucket": "${prefix}-sos",
+                    "run_type.$": "$.run_type",
+                    "json_bucket": "${prefix}-json",
+                    "json_bucket_key.$": "States.Format('{}-{}', $$.Execution.StartTime, $.counter)",
+                    "counter.$": "$.counter"
+                }
+            },
+            "Next": "Clean Up"
+        },
+        "Clean Up": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::batch:submitJob.sync",
+            "ResultPath": null,
+            "Parameters": {
+                "JobName.$": "States.Format('confluence-clean-up-{}-{}', $.version, $.counter)",
+                "JobDefinition": "arn:aws:batch:${aws_region}:${account_id}:job-definition/${prefix}-clean-up",
+                "JobQueue": "arn:aws:batch:${aws_region}:${account_id}:job-queue/${prefix}-clean-up",
+                "PropagateTags": true,
+                "Tags": {
+                    "name.$": "States.Format('confluence-{}-{}-{}', $.run_type, $.version, $.counter)",
+                    "job.$": "States.Format('confluence-clean-up-{}-{}', $.version, $.counter)"
+                },
+                "ContainerOverrides": {
+                    "Command": [
+                        "-c",
+                        "Ref::config_bucket",
+                        "-j",
+                        "Ref::json_bucket",
+                        "-k",
+                        "Ref::json_bucket_key"
+                    ]
+                },
+                "Parameters": {
+                    "config_bucket": "${prefix}-config",
+                    "json_bucket": "${prefix}-json",
+                    "json_bucket_key.$": "States.Format('{}-{}', $$.Execution.StartTime, $.counter)"
+                }
+            },
             "Next": "Successful Run"
         },
         "Successful Run": {
             "Type": "Succeed"
         },
-        "Restart Choice": {
-            "Type": "Choice",
-            "Choices": [
-                {
-                    "Variable": "$.reach_subset_file",
-                    "IsPresent": true,
-                    "Next": "Restart Subset"
-                },
-                {
-                    "Variable": "$.reach_subset_file",
-                    "IsPresent": false,
-                    "Next": "Restart"
-                }
-            ]
-        },
-        "Restart": {
+        "Report Fail": {
             "Type": "Task",
             "Resource": "arn:aws:states:::batch:submitJob.sync",
             "ResultPath": null,
             "Parameters": {
-                "JobName.$": "States.Format('confluence-restart-{}-{}', $.version, $.counter)",
-                "JobDefinition": "arn:aws:batch:${aws_region}:${account_id}:job-definition/${prefix}-restart",
-                "JobQueue": "arn:aws:batch:${aws_region}:${account_id}:job-queue/${prefix}-restart",
+                "JobName.$": "States.Format('confluence-report-fail-{}-{}', $.version, $.counter)",
+                "JobDefinition": "arn:aws:batch:${aws_region}:${account_id}:job-definition/${prefix}-report",
+                "JobQueue": "arn:aws:batch:${aws_region}:${account_id}:job-queue/${prefix}-report",
                 "PropagateTags": true,
                 "Tags": {
                     "name.$": "States.Format('confluence-{}-{}-{}', $.run_type, $.version, $.counter)",
-                    "job.$": "States.Format('confluence-restart-{}-{}', $.version, $.counter)"
+                    "job.$": "States.Format('confluence-report-fail-{}-{}', $.version, $.counter)"
                 },
                 "ContainerOverrides": {
                     "Command": [
-                        "-d",
-                        "/mnt/input",
-                        "-p",
-                        "${prefix}",
-                        "-v",
-                        "Ref::version",
-                        "-r",
-                        "Ref::run_type",
-                        "-t",
-                        "Ref::failure_threshold",
-                        "-o"
-                    ]
-                },
-                "Parameters": {
-                    "version.$": "States.Format('{}',$.version)",
-                    "run_type.$": "States.Format('{}', $.run_type)",
-                    "failure_threshold.$": "States.Format('{}',$.tolerated_failure_percentage)"
-                }
-            },
-            "Next": "Failed Run"
-        },
-        "Restart Subset": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::batch:submitJob.sync",
-            "ResultPath": null,
-            "Parameters": {
-                "JobName.$": "States.Format('confluence-restart-subset-{}-{}', $.version, $.counter)",
-                "JobDefinition": "arn:aws:batch:${aws_region}:${account_id}:job-definition/${prefix}-restart",
-                "JobQueue": "arn:aws:batch:${aws_region}:${account_id}:job-queue/${prefix}-restart",
-                "PropagateTags": true,
-                "Tags": {
-                    "name.$": "States.Format('confluence-{}-{}-{}', $.run_type, $.version, $.counter)",
-                    "job.$": "States.Format('confluence-restart-subset-{}-{}', $.version, $.counter)"
-                },
-                "ContainerOverrides": {
-                    "Command": [
-                        "-d",
-                        "/mnt/input",
-                        "-p",
-                        "${prefix}",
-                        "-v",
-                        "Ref::version",
-                        "-r",
-                        "Ref::run_type",
-                        "-u",
-                        "Ref::reachsubsetfile",
-                        "-t",
-                        "Ref::failure_threshold",
-                        "-o"
-                    ]
-                },
-                "Parameters": {
-                    "version.$": "States.Format('{}',$.version)",
-                    "run_type.$": "States.Format('{}', $.run_type)",
-                    "failure_threshold.$": "States.Format('{}',$.tolerated_failure_percentage)",
-                    "reachsubsetfile.$": "$.reach_subset_file"
-                }
-            },
-            "Next": "Failed Run"
-        },
-        "Restart Expanded": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::batch:submitJob.sync",
-            "ResultPath": null,
-            "Parameters": {
-                "JobName.$": "States.Format('confluence-restart-expanded-{}-{}', $.version, $.counter)",
-                "JobDefinition": "arn:aws:batch:${aws_region}:${account_id}:job-definition/${prefix}-restart",
-                "JobQueue": "arn:aws:batch:${aws_region}:${account_id}:job-queue/${prefix}-restart",
-                "PropagateTags": true,
-                "Tags": {
-                    "job.$": "States.Format('confluence-restart-expanded-{}-{}', $.version, $.counter)"
-                },
-                "ContainerOverrides": {
-                    "Command": [
-                        "-d",
-                        "/mnt/input",
-                        "-p",
-                        "${prefix}",
-                        "-v",
-                        "Ref::version",
-                        "-r",
-                        "Ref::run_type",
-                        "-u",
-                        "Ref::reachsubsetfile",
-                        "-t",
-                        "Ref::failure_threshold",
                         "-e",
-                        "-o"
+                        "Ref::execution_id",
+                        "-t",
+                        "Ref::temporal_range",
+                        "-s",
+                        "Ref::sos_bucket",
+                        "-r",
+                        "Ref::run_type",
+                        "-b",
+                        "Ref::json_bucket",
+                        "-k",
+                        "Ref::json_bucket_key",
+                        "-f"
                     ]
                 },
                 "Parameters": {
-                    "version.$": "States.Format('{}',$.version)",
-                    "run_type.$": "States.Format('{}', $.run_type)",
-                    "failure_threshold.$": "States.Format('{}',$.tolerated_failure_percentage)",
-                    "reachsubsetfile.$": "$.reach_subset_file"
+                    "execution_id.$": "$$.Execution.Id",
+                    "temporal_range.$": "$.temporal_range",
+                    "sos_bucket": "${prefix}-sos",
+                    "run_type.$": "$.run_type",
+                    "json_bucket": "${prefix}-json",
+                    "json_bucket_key.$": "States.Format('{}-{}', $$.Execution.StartTime, $.counter)",
+                    "counter.$": "$.counter"
+                }
+            },
+            "Next": "Clean Up Fail"
+        },
+        "Clean Up Fail": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::batch:submitJob.sync",
+            "ResultPath": null,
+            "Parameters": {
+                "JobName.$": "States.Format('confluence-clean-up-{}-{}', $.version, $.counter)",
+                "JobDefinition": "arn:aws:batch:${aws_region}:${account_id}:job-definition/${prefix}-clean-up",
+                "JobQueue": "arn:aws:batch:${aws_region}:${account_id}:job-queue/${prefix}-clean-up",
+                "PropagateTags": true,
+                "Tags": {
+                    "name.$": "States.Format('confluence-{}-{}-{}', $.run_type, $.version, $.counter)",
+                    "job.$": "States.Format('confluence-clean-up-{}-{}', $.version, $.counter)"
+                },
+                "ContainerOverrides": {
+                    "Command": [
+                        "-c",
+                        "Ref::config_bucket",
+                        "-j",
+                        "Ref::json_bucket",
+                        "-k",
+                        "Ref::json_bucket_key"
+                    ]
+                },
+                "Parameters": {
+                    "config_bucket": "${prefix}-config",
+                    "json_bucket": "${prefix}-json",
+                    "json_bucket_key.$": "States.Format('{}-{}', $$.Execution.StartTime, $.counter)"
                 }
             },
             "Next": "Failed Run"

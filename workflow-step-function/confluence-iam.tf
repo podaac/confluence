@@ -158,8 +158,7 @@ resource "aws_iam_policy" "sfn_s3" {
           "s3:ListBucketMultipartUploads"
         ],
         "Resource" : [
-          "${data.aws_s3_bucket.s3_json.arn}",
-          "${data.aws_s3_bucket.s3_map.arn}"
+          "${data.aws_s3_bucket.s3_json.arn}"
         ]
       },
       {
@@ -171,21 +170,7 @@ resource "aws_iam_policy" "sfn_s3" {
           "s3:GetObjectAttributes"
         ],
         "Resource" : [
-          "${data.aws_s3_bucket.s3_json.arn}/*",
-          "${data.aws_s3_bucket.s3_map.arn}/*"
-        ]
-      },
-      {
-        "Sid" : "AllPutObjects",
-        "Effect" : "Allow",
-        "Action" : [
-          "s3:PutObject",
-          "s3:ListMultipartUploadParts",
-          "s3:AbortMultipartUpload"
-
-        ],
-        "Resource" : [
-          "${data.aws_s3_bucket.s3_map.arn}/*"
+          "${data.aws_s3_bucket.s3_json.arn}/*"
         ]
       }
     ]

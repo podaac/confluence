@@ -25,10 +25,6 @@ data "aws_s3_bucket" "s3_json" {
   bucket = "${var.prefix}-json"
 }
 
-data "aws_s3_bucket" "s3_map" {
-  bucket = "${var.prefix}-map-state"
-}
-
 # Local variables
 locals {
   account_id = data.aws_caller_identity.current.account_id
