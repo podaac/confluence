@@ -3,14 +3,21 @@ name: Deploy
 # Events that trigger the workflow
 on:
   # Trigger based on push to all branches - TODO
-  # push:
-    # branches:
-      # - 'development/**'
-      # - 'feature/**'
-      # - 'release/**'
-      # - 'main'
-    # tags-ignore:
-      # - '*'
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+      - 'feature/**'
+      - 'issue/**'
+      - 'issues/**'
+      - 'dependabot/**'
+    tags-ignore:
+      - '*'
+    # Do not trigger build if pyproject.toml was the only thing changed
+    paths-ignore:
+      - 'pyproject.toml'
+      - 'poetry.lock'
   # Run workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
@@ -28,54 +35,202 @@ on:
                 - Infrastructure
                 - Step Function
 
+# Only allow 1 execution of this workflow to be running at any given time per-branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # Environment variables
 env:
   INFRA_APP_NAME_ENV: 'confluence'
   SFN_APP_NAME_ENV: 'confluence-sfn'
+  POETRY_VERSION: "1.7.1"
+  PYTHON_VERSION: "3.13"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  deploy-infrastructure:
-    if: github.event.inputs.deployment == 'Infrastructure'
-    name: Deploy Infrastructure
-    # The type of runner that the job will run on
+  build:
+    name: Build, test, verify
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
     steps:
+      # Create a release and set deployment environment
+      - uses: getsentry/action-github-app-token@v3
+        name: PO.DAAC CICD token
+        id: podaac-cicd
+        with:
+          app_id: ${{ secrets.CICD_APP_ID }}
+          private_key: ${{ secrets.CICD_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ steps.podaac-cicd.outputs.token }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
 
-      # DEV1 environment variables
-      - name: Set Environment Variables
-        if: github.event.inputs.venue == 'DEV1'
+      # Get current version
+      - name: Get pre-build version
+        id: get-version
         run: |
+          echo "current_version=$(poetry version | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "pyproject_name=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
+
+      - name: Manual build
+        # If triggered by workflow dispatch, no version bump
+        if: github.event_name == 'workflow_dispatch'
+        id: manual
+        run: |
+          echo "APP_VERSION=${{ steps.get-version.outputs.current_version }}" >> $GITHUB_ENV
+          echo "TARGET_ENV=${{ github.event.inputs.venue }}" >> $GITHUB_ENV
+          target_env=${{ github.event.inputs.venue }}
+          echo "PREFIX_ENV=confluence-$(echo "$target_env" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Bump pre-alpha version
+        # If triggered by push to a non-tracked branch (DEV1)
+        if: |
+          github.ref != 'refs/heads/develop' &&
+          github.ref != 'refs/heads/main' &&
+          !startsWith(github.ref, 'refs/heads/release/')
+        run: |
+          new_ver="${{ steps.get-version.outputs.current_version }}+$(git rev-parse --short ${GITHUB_SHA})"
+          poetry version $new_ver
+          echo "APP_VERSION=$new_ver" >> $GITHUB_ENV
           echo "TARGET_ENV=DEV1" >> $GITHUB_ENV
           echo "PREFIX_ENV=confluence-dev1" >> $GITHUB_ENV
 
-      # DEV2 environment variables
-      - name: Set Environment Variables
-        if: github.event.inputs.venue == 'DEV2'
+      - name: Bump alpha version
+        # If triggered by push to the develop branch (DEV1)
+        if: |
+          github.ref == 'refs/heads/develop' &&
+          steps.manual.conclusion == 'skipped'
+        id: alpha
         run: |
+          poetry version prerelease
+          echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
+          echo "TARGET_ENV=DEV1" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-dev1" >> $GITHUB_ENV
+
+      - name: Bump rc version
+        # If triggered by push to a release branch (DEV2)
+        if: |
+          startsWith(github.ref, 'refs/heads/release/') &&
+          steps.manual.conclusion == 'skipped'
+        id: rc
+        env:
+          # True if the version already has a 'rc' pre-release identifier
+          BUMP_RC: ${{ contains(steps.get-version.outputs.current_version, 'rc') }}
+        run: |
+          if [ "$BUMP_RC" = true ]; then
+            poetry version prerelease
+          else
+            poetry version ${GITHUB_REF#refs/heads/release/}rc1
+          fi
+          echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
           echo "TARGET_ENV=DEV2" >> $GITHUB_ENV
           echo "PREFIX_ENV=confluence-dev2" >> $GITHUB_ENV
 
-      # OPS environment variables
-      - name: Set Environment Variables
-        if: github.event.inputs.venue == 'OPS'
+      - name: Release version
+        # If triggered by push to the main branch (OPS)
+        if: |
+          startsWith(github.ref, 'refs/heads/main') &&
+          steps.manual.conclusion == 'skipped'
+        id: release
+        env:
+          CURRENT_VERSION: ${{ steps.get-version.outputs.current_version }}
+        # Remove rc* from end of version string
+        # The ${string%%substring} syntax below deletes the longest match of $substring from back of $string.
         run: |
+          poetry version ${CURRENT_VERSION%%rc*}
+          echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
           echo "TARGET_ENV=OPS" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-ops" >> $GITHUB_ENV
+          echo "PREFIX_ENV=confluence-OPS" >> $GITHUB_ENV
+      
+      # Validate infrastructure terraform files
+      - name: Validate terraform
+        if: |
+          github.event.inputs.deployment == 'Infrastructure' ||
+          github.event_name == 'push'
+        working-directory: workflow-infrastructure/
+        run: |
+          terraform init -backend=false
+          terraform validate -no-color
+      
+      # Validate step function terraform files
+      - name: Validate terraform
+        if: |
+          github.event.inputs.deployment == 'Step Function' ||
+          github.event_name == 'push'
+        working-directory: workflow-step-function/
+        run: |
+          terraform init -backend=false
+          terraform validate -no-color
 
+      # SNYK IAC scan and report (as a blocking step)
+      - name: Run Snyk IAC to test and report
+        uses: snyk/actions/iac@master
+        env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: >
+              --org=${{ secrets.SNYK_ORG_ID }}
+              --severity-threshold=high
+              --report
+              --fail-on=all
+      
+      - name: Commit Version Bump
+        # If building an alpha, release candidate, or release then we commit the version bump back to the repo
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git commit -am "/version ${{ env.APP_VERSION }}"
+          git push
+
+      - name: Push Tag
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "${{ env.APP_VERSION }}" -m "Version ${{ env.APP_VERSION }}"
+          git push origin "${{ env.APP_VERSION }}"
+
+      - name: Create GH release
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        uses: ncipollo/release-action@v1
+        with:
+          generateReleaseNotes: true
+          name: ${{ env.APP_VERSION }}
+          prerelease: ${{ steps.alpha.conclusion == 'success' || steps.rc.conclusion == 'success'}}
+          tag: ${{ env.APP_VERSION }}
+    
+  deploy-infrastructure:
+    if: |
+      github.event.inputs.deployment == 'Infrastructure' ||
+      github.event_name == 'push'
+    name: Deploy infrastructure
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    steps:
       # Check out GitHub repo
       - uses: actions/checkout@v4
-
-      # SNYK IAC scan and report - TODO
-      # - name: Run Snyk IAC to test and report
-        # uses: snyk/actions/iac@master
-        # env:
-            # SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        # with:
-          # command: test
-          # args: >
-              # --org=${{ secrets.SNYK_ORG_ID }}
-              # --severity-threshold=high
-              # --report
 
       # Configure credentials 
       - name: Configure AWS credentials
@@ -92,6 +247,7 @@ jobs:
       
       - name: Define TF_VAR values
         run: |
+          echo "TF_VAR_app_version=$APP_VERSION" >> $GITHUB_ENV
           echo "TF_VAR_environment=$TARGET_ENV" >> $GITHUB_ENV
           echo "TF_VAR_prefix=$PREFIX_ENV" >> $GITHUB_ENV
           echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
@@ -112,57 +268,22 @@ jobs:
               -backend-config="key=${INFRA_APP_NAME_ENV}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
 
-      - name: Validate Terraform
-        working-directory: workflow-infrastructure/
-        run: terraform validate -no-color
-
       # Deploy AWS infrastructure
       - name: Deploy Terraform
         working-directory: workflow-infrastructure/
         run: terraform apply -auto-approve
 
   deploy-step-function:
-    if: github.event.inputs.deployment == 'Step Function'
-    name: Deploy Step Function
+    if: |
+      github.event.inputs.deployment == 'Step Function' ||
+      github.event_name == 'push'
+    name: Deploy step function
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     steps:
 
-      # DEV1 environment variables
-      - name: Set Environment Variables
-        if: github.event.inputs.venue == 'DEV1'
-        run: |
-          echo "TARGET_ENV=DEV1" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-dev1" >> $GITHUB_ENV
-
-      # DEV2 environment variables
-      - name: Set Environment Variables
-        if: github.event.inputs.venue == 'DEV2'
-        run: |
-          echo "TARGET_ENV=DEV2" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-dev2" >> $GITHUB_ENV
-
-      # OPS environment variables
-      - name: Set Environment Variables
-        if: github.event.inputs.venue == 'OPS'
-        run: |
-          echo "TARGET_ENV=OPS" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-ops" >> $GITHUB_ENV
-
       # Check out GitHub repo
       - uses: actions/checkout@v4
-
-      # SNYK IAC scan and report - TODO
-      # - name: Run Snyk IAC to test and report
-        # uses: snyk/actions/iac@master
-        # env:
-            # SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        # with:
-          # command: test
-          # args: >
-              # --org=${{ secrets.SNYK_ORG_ID }}
-              # --severity-threshold=high
-              # --report
 
       # Configure credentials 
       - name: Configure AWS credentials
@@ -190,10 +311,6 @@ jobs:
               -backend-config="bucket=${PREFIX_ENV}-tf-state" \
               -backend-config="key=${SFN_APP_NAME_ENV}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
-
-      - name: Validate Terraform
-        working-directory: workflow-step-function/
-        run: terraform validate -no-color
 
       # Deploy AWS infrastructure
       - name: Deploy Terraform
