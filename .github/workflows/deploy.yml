@@ -157,8 +157,11 @@ jobs:
           echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
           echo "TARGET_ENV=OPS" >> $GITHUB_ENV
           echo "PREFIX_ENV=confluence-OPS" >> $GITHUB_ENV
-      
+
       # Validate infrastructure terraform files
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+
       - name: Validate terraform
         if: |
           github.event.inputs.deployment == 'Infrastructure' ||
@@ -169,8 +172,6 @@ jobs:
           terraform validate -no-color
       
       # Validate step function terraform files
-      - name: Setup terraform
-        uses: hashicorp/setup-terraform@v3
       - name: Validate terraform
         if: |
           github.event.inputs.deployment == 'Step Function' ||
