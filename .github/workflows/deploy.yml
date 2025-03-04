@@ -44,7 +44,7 @@ concurrency:
 env:
   INFRA_APP_NAME_ENV: 'confluence'
   SFN_APP_NAME_ENV: 'confluence-sfn'
-  POETRY_VERSION: "1.7.1"
+  POETRY_VERSION: "2.1.1"
   PYTHON_VERSION: "3.13"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -169,6 +169,8 @@ jobs:
           terraform validate -no-color
       
       # Validate step function terraform files
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
       - name: Validate terraform
         if: |
           github.event.inputs.deployment == 'Step Function' ||
@@ -191,7 +193,7 @@ jobs:
               --report
               --fail-on=all
       
-      - name: Commit Version Bump
+      - name: Commit version bump
         # If building an alpha, release candidate, or release then we commit the version bump back to the repo
         if: |
           steps.alpha.conclusion == 'success'   ||
@@ -203,7 +205,7 @@ jobs:
           git commit -am "/version ${{ env.APP_VERSION }}"
           git push
 
-      - name: Push Tag
+      - name: Push tag
         if: |
           steps.alpha.conclusion == 'success'   ||
           steps.rc.conclusion == 'success'      ||
