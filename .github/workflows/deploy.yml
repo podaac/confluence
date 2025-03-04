@@ -40,8 +40,6 @@ env:
   SFN_APP_NAME_ENV: 'confluence-sfn'
   POETRY_VERSION: "2.1.1"
   PYTHON_VERSION: "3.13"
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
