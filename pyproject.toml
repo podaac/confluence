@@ -1,0 +1,17 @@
+[project]
+name = "confluence"
+version = "1.0.0"
+description = "Confluence is a cloud-based workflow that produces river discharge estimates and suspended sediment concentration data using SWOT observations and HLS. This is the top-level repo that includes Terraform that deploys shared AWS infrastructure for the Confluence workflow."
+authors = [
+    {name = "Nikki",email = "17799906+nikki-t@users.noreply.github.com"}
+]
+license = {text = "The Apache License 2.0"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
