@@ -80,6 +80,7 @@ jobs:
       - name: Get pre-build version
         id: get-version
         run: |
+          echo "poetry version"
           echo "current_version=$(poetry version | awk '{print $2}')" >> $GITHUB_OUTPUT
           echo "pyproject_name=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
 
