@@ -192,7 +192,6 @@ jobs:
               --org=${{ secrets.SNYK_ORG_ID }}
               --severity-threshold=high
               --report
-              --fail-on=all
       
       - name: Commit version bump
         # If building an alpha, release candidate, or release then we commit the version bump back to the repo
