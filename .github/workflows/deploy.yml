@@ -75,6 +75,10 @@ jobs:
         uses: abatilo/actions-poetry@v3
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
+      - name: Setup a local virtual environment
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
 
       # Get current version
       - name: Get pre-build version
