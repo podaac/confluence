@@ -1953,12 +1953,12 @@
             "Choices": [
                 {
                     "Variable": "$.run_postdiagnostics",
-                    "IsPresent": true,
+                    "StringEquals": "true",
                     "Next": "Postdiagnostics MOI"
                 },
                 {
                     "Variable": "$.run_postdiagnostics",
-                    "IsPresent": false,
+                    "StringEquals": "false",
                     "Next": "Offline"
                 }
             ]

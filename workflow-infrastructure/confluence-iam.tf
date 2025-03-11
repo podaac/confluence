@@ -283,6 +283,7 @@ resource "aws_iam_policy" "batch_job_sfn_policy" {
           "states:ListMapRuns"
         ],
         "Resource" : [
+          "arn:aws:states:${var.aws_region}:${local.account_id}:execution:${var.prefix}-workflow:*",
           "arn:aws:states:${var.aws_region}:${local.account_id}:mapRun:${var.prefix}-workflow/*",
           "arn:aws:states:${var.aws_region}:${local.account_id}:execution:${var.prefix}-workflow/*"
         ]
@@ -339,7 +340,7 @@ resource "aws_iam_policy" "batch_job_sns_policy" {
         "Sid" : "AllowList",
         "Effect" : "Allow",
         "Action" : "sns:ListTopics",
-        "Resource" : "${aws_sns_topic.aws_sns_topic_confluence_reports.arn}"
+        "Resource" : "arn:aws:sns:${var.aws_region}:${local.account_id}:*"
       },
       {
         "Sid" : "AllowPublish",
