@@ -39,7 +39,7 @@ env:
   INFRA_APP_NAME_ENV: 'confluence'
   SFN_APP_NAME_ENV: 'confluence-sfn'
   POETRY_VERSION: "2.1.1"
-  PYTHON_VERSION: "3.13"
+  PYTHON_VERSION: "3.10"
 
 jobs:
   build:
