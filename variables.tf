@@ -5,9 +5,9 @@ variable "app_name" {
 }
 
 variable "app_version" {
-  type        = string
+  type        = number
   description = "The application version number"
-  default     = "v1.0.0"
+  default     = 0.1
 }
 
 variable "aws_region" {
@@ -16,9 +16,14 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
-variable "default_tags" {
-  type    = map(string)
-  default = {}
+variable "ec2_key_pair" {
+  type        = string
+  description = "Key pair used to access EFS EC2 instances"
+}
+
+variable "sns_email_reports" {
+  type        = string
+  description = "Email address to SNS topic reports to"
 }
 
 variable "environment" {

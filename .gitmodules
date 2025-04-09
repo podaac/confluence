@@ -1,0 +1,3 @@
+[submodule "confluence-terraform"]
+	path = confluence-terraform
+	url = https://github.com/SWOT-Confluence/confluence-terraform
