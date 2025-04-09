@@ -25,8 +25,8 @@ on:
             type: choice
             description: Venue to deploy to
             options:
-                - DEV1
-                - DEV2
+                - SIT
+                - UAT
                 - OPS
 
 # Only allow 1 execution of this workflow to be running at any given time per-branch.
