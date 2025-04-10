@@ -41,6 +41,7 @@ env:
   INIT_APP_NAME_ENV: 'init-workflow'
   POETRY_VERSION: "2.1.1"
   PYTHON_VERSION: "3.10"
+  REGISTRY: ghcr.io
 
 jobs:
   build:
@@ -272,7 +273,7 @@ jobs:
       PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
       TARGET_ENV: ${{ needs.build.outputs.target_env }}
     steps:
-      # Credentials
+      # AWS Credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -281,7 +282,7 @@ jobs:
           aws-region: us-west-2
           mask-aws-account-id: true
 
-      # Login
+      # ECR Login
       - name: Login to AWS ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -290,6 +291,14 @@ jobs:
 
       # GitHub repo
       - uses: actions/checkout@v4
+
+      # GHCR.IO login
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # Init workflow
       - name: Define ECR registry, repository, and image tag names
