@@ -231,7 +231,7 @@ jobs:
           echo "app_version=${{ env.APP_VERSION }}" >> $GITHUB_OUTPUT
           echo "prefix_env=${{ env.PREFIX_ENV }}" >> $GITHUB_OUTPUT
           echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
-          echo "target_env_lowercase=${{ env.TARGET_ENV }} | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
+          echo target_env_lowercase=${{ env.TARGET_ENV }} | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
 
 
   deploy-infrastructure:
