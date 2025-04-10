@@ -288,16 +288,15 @@ jobs:
         with:
           mask-password: 'true'
 
+      # GitHub repo
+      - uses: actions/checkout@v4
+
       # Init workflow
       - name: Define ECR registry, repository, and image tag names
         run : |
           echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
           echo "REPOSITORY_INIT=${{ env.PREFIX_ENV }}-${{ env.INIT_APP_NAME_ENV }}" >> $GITHUB_ENV
           echo "IMAGE_TAG=${{ env.APP_VERSION }}" >> $GITHUB_ENV
-
-      - name: List directory contents
-        run: |
-          ls -l
 
       # Create ECR repository (if it does not exist)
       - name: Create AWS ECR Repository
