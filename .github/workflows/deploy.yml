@@ -241,6 +241,7 @@ jobs:
     env:
       APP_VERSION: ${{ needs.build.outputs.app_version }}
       PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
+      TARGET_ENV: ${{ needs.build.outputs.target_env }}
     steps:
       # Credentials
       - name: Configure AWS credentials
