@@ -283,7 +283,7 @@ jobs:
         run: |
           terraform init -reconfigure \
               -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
-              -backend-config="key=${{ env.INFRA_APP_NAME_ENV }}.tfstate" \
+              -backend-config="key=services/confluence/${{ env.INFRA_APP_NAME_ENV }}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
           # terraform apply -auto-approve
           terraform plan
@@ -330,6 +330,6 @@ jobs:
       #   run: |
       #     terraform init -reconfigure \
       #         -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
-      #         -backend-config="key=${SFN_APP_NAME_ENV}.tfstate" \
+      #         -backend-config="key=services/confluence/${SFN_APP_NAME_ENV}.tfstate" \
       #         -backend-config="region=${AWS_DEFAULT_REGION}"
       #     terraform apply -auto-approve
