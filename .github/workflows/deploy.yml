@@ -155,15 +155,20 @@ jobs:
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Validate podaac terraform
+        run: |
+          terraform init -backend=false
+          terraform validate -no-color
+
       - name: Validate infrastructure terraform
-        working-directory: workflow-infrastructure/
+        working-directory: confluence-terraform/workflow-infrastructure/
         run: |
           terraform init -backend=false
           terraform validate -no-color
       
       # Validate step function terraform files
       - name: Validate step function terraform
-        working-directory: workflow-step-function/
+        working-directory: confluence-terraform/workflow-step-function/
         run: |
           terraform init -backend=false
           terraform validate -no-color
@@ -247,20 +252,13 @@ jobs:
           echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
 
-      - name: Initialize Terraform
-        working-directory: workflow-infrastructure/
+      - name: Initialize and deploy Terraform
         run: |
           terraform init -reconfigure \
               -backend-config="bucket=${PREFIX_ENV}-tf-state" \
               -backend-config="key=${INFRA_APP_NAME_ENV}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
-
-      # Deploy AWS infrastructure
-      - name: Deploy Terraform
-        working-directory: workflow-infrastructure/
-        run: | 
-          # terraform apply -auto-approve
-          terraform plan -no-color
+          terraform apply -auto-approve
 
   deploy-step-function:
     name: Deploy step function
@@ -293,15 +291,11 @@ jobs:
       #     echo "TF_VAR_prefix=$PREFIX_ENV" >> $GITHUB_ENV
       #     echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
 
-      # - name: Initialize Terraform
-      #   working-directory: workflow-step-function/
+      # - name: Initialize and deploy SFN Terraform
+      #   working-directory: confluence-terraform/workflow-step-function/
       #   run: |
       #     terraform init -reconfigure \
       #         -backend-config="bucket=${PREFIX_ENV}-tf-state" \
       #         -backend-config="key=${SFN_APP_NAME_ENV}.tfstate" \
       #         -backend-config="region=${AWS_DEFAULT_REGION}"
-
-      # # Deploy AWS infrastructure
-      # - name: Deploy Terraform
-      #   working-directory: workflow-step-function/
-      #   run: terraform apply -auto-approve
+      #     terraform apply -auto-approve
