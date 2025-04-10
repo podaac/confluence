@@ -60,6 +60,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           token: ${{ steps.podaac-cicd.outputs.token }}
+          submodules: 'recursive'
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -222,6 +223,8 @@ jobs:
     steps:
       # Check out GitHub repo
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       # Configure credentials
       - name: Configure AWS credentials
@@ -267,6 +270,8 @@ jobs:
 
       # Check out GitHub repo
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       # # Configure credentials 
       # - name: Configure AWS credentials
