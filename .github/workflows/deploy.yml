@@ -38,7 +38,7 @@ concurrency:
 env:
   INFRA_APP_NAME_ENV: 'confluence'
   SFN_APP_NAME_ENV: 'confluence-sfn'
-  INIT_APP_NAME_ENV: 'init_workflow'
+  INIT_APP_NAME_ENV: 'init-workflow'
   POETRY_VERSION: "2.1.1"
   PYTHON_VERSION: "3.10"
 
@@ -265,6 +265,14 @@ jobs:
           echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
           echo "REPOSITORY_INIT=${{ env.PREFIX_ENV }}-${{ env.INIT_APP_NAME_ENV }}" >> $GITHUB_ENV
           echo "IMAGE_TAG=${{ env.APP_VERSION }}" >> $GITHUB_ENV
+
+      - name: List directory contents
+        run: |
+          ls -l
+          init_container=${{ env.INIT_APP_NAME_ENV }}
+          init_container_underscore=${init_container//-/_}
+          echo $init_container_underscore
+
 
       # Create ECR repository (if it does not exist)
       - name: Create AWS ECR Repository
