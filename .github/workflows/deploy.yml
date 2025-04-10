@@ -171,10 +171,17 @@ jobs:
         run: |
           terraform init -backend=false
           terraform validate -no-color
-      
+
       # Validate step function terraform files
       - name: Validate step function terraform
         working-directory: confluence-terraform/workflow-step-function/
+        run: |
+          terraform init -backend=false
+          terraform validate -no-color
+
+      # Validate init workflow terraform files
+      - name: Validate step function terraform
+        working-directory: init_workflow/terraform
         run: |
           terraform init -backend=false
           terraform validate -no-color
@@ -190,7 +197,29 @@ jobs:
               --org=${{ secrets.SNYK_ORG_ID }}
               --severity-threshold=high
               --report
-      
+
+      # SNYK Python
+      - name: Run Snyk Python to test
+        uses: snyk/actions/python-3.10@master
+        env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: >
+              --org=${{ secrets.SNYK_ORG_ID }}
+              --project-name=${{ github.repository }}
+              --severity-threshold=high
+              --fail-on=all
+      - name: Run Snyk Python to report
+        uses: snyk/actions/python-3.10@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: >
+            --org=${{ secrets.SNYK_ORG_ID }}
+            --project-name=${{ github.repository }}
+
       - name: Commit version bump and define output
         # If building an alpha, release candidate, or release then we commit the version bump back to the repo
         if: |
