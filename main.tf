@@ -62,7 +62,3 @@ module "confluence-terraform" {
   vpc_sg_id         = data.aws_security_group.vpc_default_sg.id
   vpc_subnets       = values(data.aws_subnet.private_application_subnet_list).*.id
 }
-
-output "default_vpc_sg" {
-  value = data.aws_security_group.vpc_default_sg.id
-}

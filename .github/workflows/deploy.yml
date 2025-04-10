@@ -50,8 +50,9 @@ jobs:
         shell: bash -el {0}
     outputs:
       app_version: ${{ steps.output.outputs.app_version }}
-      target_env: ${{ steps.output.outputs.target_env }}
       prefix_env: ${{ steps.output.outputs.prefix_env }}
+      target_env: ${{ steps.output.outputs.target_env }}
+      target_env_lowercase: ${{ steps.output.outputs.target_env_lowercase }}
     steps:
       # Create a release and set deployment environment
       - uses: getsentry/action-github-app-token@v3
@@ -228,8 +229,9 @@ jobs:
         id: output
         run: |
           echo "app_version=${{ env.APP_VERSION }}" >> $GITHUB_OUTPUT
-          echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
           echo "prefix_env=${{ env.PREFIX_ENV }}" >> $GITHUB_OUTPUT
+          echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
+          echo "target_env_lowercase=${{ env.TARGET_ENV }} | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
 
 
   deploy-infrastructure:
@@ -241,6 +243,7 @@ jobs:
       APP_VERSION: ${{ needs.build.outputs.app_version }}
       PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
       TARGET_ENV: ${{ needs.build.outputs.target_env }}
+      TARGET_ENV_LOWERCASE: ${{ needs.build.outputs.target_env_lowercase }}
     steps:
       # Check out GitHub repo
       - uses: actions/checkout@v4
@@ -279,11 +282,12 @@ jobs:
       - name: Initialize and deploy Terraform
         run: |
           terraform init -reconfigure \
-              -backend-config="bucket=${{ env.PREFIX_ENV }}-tf-state" \
+              -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
               -backend-config="key=${{ env.INFRA_APP_NAME_ENV }}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
           # terraform apply -auto-approve
           terraform plan
+
 
   deploy-step-function:
     name: Deploy step function
@@ -293,6 +297,7 @@ jobs:
       APP_VERSION: ${{ needs.build.outputs.app_version }}
       PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
       TARGET_ENV: ${{ needs.build.outputs.target_env }}
+      TARGET_ENV_LOWERCASE: ${{ needs.build.outputs.target_env_lowercase }}
     steps:
 
       # Check out GitHub repo
@@ -324,7 +329,7 @@ jobs:
       #   working-directory: confluence-terraform/workflow-step-function/
       #   run: |
       #     terraform init -reconfigure \
-      #         -backend-config="bucket=${{ env.TARGET_ENV }}-tf-state" \
+      #         -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
       #         -backend-config="key=${SFN_APP_NAME_ENV}.tfstate" \
       #         -backend-config="region=${AWS_DEFAULT_REGION}"
       #     terraform apply -auto-approve
