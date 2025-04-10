@@ -49,9 +49,9 @@ jobs:
       run:
         shell: bash -el {0}
     outputs:
-      app_version: ${{ steps.commit-output.outputs.app_version }}
-      target_env: ${{ steps.commit-output.outputs.target_env }}
-      prefix_env: ${{ steps.commit-output.outputs.prefix_env }}
+      app_version: ${{ steps.output.outputs.app_version }}
+      target_env: ${{ steps.output.outputs.target_env }}
+      prefix_env: ${{ steps.output.outputs.prefix_env }}
     steps:
       # Create a release and set deployment environment
       - uses: getsentry/action-github-app-token@v3
@@ -191,7 +191,6 @@ jobs:
       
       - name: Commit version bump and define output
         # If building an alpha, release candidate, or release then we commit the version bump back to the repo
-        id: commit-output
         if: |
           steps.alpha.conclusion == 'success'   ||
           steps.rc.conclusion == 'success'      ||
@@ -201,9 +200,6 @@ jobs:
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git commit -am "/version ${{ env.APP_VERSION }}"
           git push
-          echo "app_version=${{ env.APP_VERSION }}" >> $GITHUB_OUTPUT
-          echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
-          echo "prefix_env=${{ env.PREFIX_ENV }}" >> $GITHUB_OUTPUT
 
       - name: Push tag
         if: |
@@ -227,7 +223,15 @@ jobs:
           name: ${{ env.APP_VERSION }}
           prerelease: ${{ steps.alpha.conclusion == 'success' || steps.rc.conclusion == 'success'}}
           tag: ${{ env.APP_VERSION }}
-    
+
+      - name: Save output
+        id: output
+        run: |
+          echo "app_version=${{ env.APP_VERSION }}" >> $GITHUB_OUTPUT
+          echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
+          echo "prefix_env=${{ env.PREFIX_ENV }}" >> $GITHUB_OUTPUT
+
+
   deploy-infrastructure:
     name: Deploy infrastructure
     # The type of runner that the job will run on
