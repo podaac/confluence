@@ -233,6 +233,10 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     needs: build
+    env:
+      APP_VERSION: ${{ needs.build.outputs.app_version }}
+      PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
+      TARGET_ENV: ${{ needs.build.outputs.target_env }}
     steps:
       # Check out GitHub repo
       - uses: actions/checkout@v4
@@ -249,8 +253,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', needs.build.outputs.target_env)] }}
-          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', needs.build.outputs.target_env)] }}
+          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV)] }}
+          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV)] }}
           aws-region: us-west-2
           mask-aws-account-id: true
 
@@ -260,19 +264,19 @@ jobs:
       
       - name: Define TF_VAR values
         run: |
-          echo "TF_VAR_app_version=${{ needs.build.outputs.app_version }}" >> $GITHUB_ENV
-          echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', needs.build.outputs.target_env)] }}" >> $GITHUB_ENV
-          echo "TF_VAR_environment=${{ needs.build.outputs.target_env }}" >> $GITHUB_ENV
-          echo "TF_VAR_prefix=${{ needs.build.outputs.prefix_env }}" >> $GITHUB_ENV
-          echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', needs.build.outputs.target_env)] }}" >> $GITHUB_ENV
-          echo "TF_VAR_permissions_boundary=${{ secrets[format('PERMISSIONS_BOUNDARY_{0}', needs.build.outputs.target_env)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
+          echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_environment=${{ env.TARGET_ENV }}" >> $GITHUB_ENV
+          echo "TF_VAR_prefix=${{ env.PREFIX_ENV }}" >> $GITHUB_ENV
+          echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_permissions_boundary=${{ secrets[format('PERMISSIONS_BOUNDARY_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
 
       - name: Initialize and deploy Terraform
         run: |
           terraform init -reconfigure \
-              -backend-config="bucket=${{ needs.build.outputs.prefix_env }}-tf-state" \
-              -backend-config="key=${INFRA_APP_NAME_ENV}.tfstate" \
+              -backend-config="bucket=${{ env.PREFIX_ENV }}-tf-state" \
+              -backend-config="key=${{ env.INFRA_APP_NAME_ENV }}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
           # terraform apply -auto-approve
           terraform plan
@@ -280,7 +284,11 @@ jobs:
   deploy-step-function:
     name: Deploy step function
     runs-on: ubuntu-latest
-    needs: deploy-infrastructure
+    needs: [build, deploy-infrastructure]
+    env:
+      APP_VERSION: ${{ needs.build.outputs.app_version }}
+      PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
+      TARGET_ENV: ${{ needs.build.outputs.target_env }}
     steps:
 
       # Check out GitHub repo
@@ -303,16 +311,16 @@ jobs:
       
       # - name: Define TF_VAR values
       #   run: |
-      #     echo "TF_VAR_app_version=${{ needs.build.outputs.app_version }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_environment=${{ needs.build.outputs.target_env }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_prefix=${{ needs.build.outputs.prefix_env }}" >> $GITHUB_ENV
+      #     echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
+      #     echo "TF_VAR_environment=${{ env.TARGET_ENV }}" >> $GITHUB_ENV
+      #     echo "TF_VAR_prefix=${{ env.PREFIX_ENV }}" >> $GITHUB_ENV
       #     echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
 
       # - name: Initialize and deploy SFN Terraform
       #   working-directory: confluence-terraform/workflow-step-function/
       #   run: |
       #     terraform init -reconfigure \
-      #         -backend-config="bucket=${{ needs.build.outputs.prefix_env }}-tf-state" \
+      #         -backend-config="bucket=${{ env.TARGET_ENV }}-tf-state" \
       #         -backend-config="key=${SFN_APP_NAME_ENV}.tfstate" \
       #         -backend-config="region=${AWS_DEFAULT_REGION}"
       #     terraform apply -auto-approve
