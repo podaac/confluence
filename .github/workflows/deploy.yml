@@ -298,10 +298,6 @@ jobs:
       - name: List directory contents
         run: |
           ls -l
-          init_container=${{ env.INIT_APP_NAME_ENV }}
-          init_container_underscore=${init_container//-/_}
-          echo $init_container_underscore
-
 
       # Create ECR repository (if it does not exist)
       - name: Create AWS ECR Repository
@@ -310,10 +306,13 @@ jobs:
       # Pull and push Docker container image by version tag and to latest tag
       - name: Pull ghcr.io container and push to AWS ECR
         run: |
-          docker pull ghcr.io/swot-confluence/${{ env.INIT_APP_NAME_ENV }}:latest
-          docker tag ghcr.io/swot-confluence/${{ env.INIT_APP_NAME_ENV }}:latest $REGISTRY/$REPOSITORY_INIT:$IMAGE_TAG
+          init_container=${{ env.INIT_APP_NAME_ENV }}
+          init_container_underscore=${init_container//-/_}
+
+          docker pull ghcr.io/swot-confluence/${init_container_underscore}:latest
+          docker tag ghcr.io/swot-confluence/${init_container_underscore}:latest $REGISTRY/$REPOSITORY_INIT:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY_INIT:$IMAGE_TAG
-          docker tag ghcr.io/swot-confluence/${{ env.INIT_APP_NAME_ENV }}:latest $REGISTRY/$REPOSITORY_INIT:latest
+          docker tag ghcr.io/swot-confluence/${init_container_underscore}:latest $REGISTRY/$REPOSITORY_INIT:latest
           docker push $REGISTRY/$REPOSITORY_INIT:latest
 
   deploy:
