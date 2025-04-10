@@ -305,7 +305,6 @@ jobs:
         run : |
           echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
           echo "REPOSITORY_INIT=${{ env.PREFIX_ENV }}-${{ env.INIT_APP_NAME_ENV }}" >> $GITHUB_ENV
-          echo "IMAGE_TAG=${{ env.APP_VERSION }}" >> $GITHUB_ENV
 
       # Create ECR repository (if it does not exist)
       - name: Create AWS ECR Repository
@@ -316,10 +315,12 @@ jobs:
         run: |
           init_container=${{ env.INIT_APP_NAME_ENV }}
           init_container_underscore=${init_container//-/_}
+          image_tag_full=${{ env.APP_VERSION }}
+          image_tag=${image_tage_full:0:5}
 
           docker pull ghcr.io/swot-confluence/${init_container_underscore}:latest
-          docker tag ghcr.io/swot-confluence/${init_container_underscore}:latest $REGISTRY/$REPOSITORY_INIT:$IMAGE_TAG
-          docker push $REGISTRY/$REPOSITORY_INIT:$IMAGE_TAG
+          docker tag ghcr.io/swot-confluence/${init_container_underscore}:latest $REGISTRY/$REPOSITORY_INIT:$image_tag
+          docker push $REGISTRY/$REPOSITORY_INIT:$image_tag
           docker tag ghcr.io/swot-confluence/${init_container_underscore}:latest $REGISTRY/$REPOSITORY_INIT:latest
           docker push $REGISTRY/$REPOSITORY_INIT:latest
 
