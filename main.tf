@@ -37,7 +37,7 @@ data "aws_subnet" "private_application_subnet_list" {
   id       = each.value
 }
 
-data "aws_security_groups" "vpc_default_sg" {
+data "aws_security_group" "vpc_default_sg" {
   filter {
     name   = "group-name"
     values = ["default"]
@@ -59,6 +59,10 @@ module "confluence-terraform" {
   environment       = var.environment
   prefix            = var.prefix
   vpc_id            = data.aws_vpc.application_vpc.id
-  vpc_sg_id         = data.aws_security_groups.vpc_default_sg.id
+  vpc_sg_id         = data.aws_security_group.vpc_default_sg.id
   vpc_subnets       = values(data.aws_subnet.private_application_subnet_list).*.id
+}
+
+output "default_vpc_sg" {
+  value = data.aws_security_group.vpc_default_sg.id
 }
