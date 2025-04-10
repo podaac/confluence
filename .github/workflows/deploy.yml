@@ -316,7 +316,8 @@ jobs:
           init_container=${{ env.INIT_APP_NAME_ENV }}
           init_container_underscore=${init_container//-/_}
           image_tag_full=${{ env.APP_VERSION }}
-          image_tag="${image_tage_full:0:5}"
+          echo "image_tag_full $image_tag_full"
+          image_tag=$(echo $image_tag_full | cut -c1-5)
           echo "image_tag $image_tag"
 
           docker pull ghcr.io/swot-confluence/${init_container_underscore}:latest
