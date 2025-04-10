@@ -239,6 +239,12 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Print outputs
+        run: |
+          echo ${{ needs.build.outputs.target_env }}
+          echo ${{ needs.build.outputs.prefix_env }}
+          echo ${{ needs.build.outputs.app_version }}
+
       # Configure credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
