@@ -285,8 +285,7 @@ jobs:
               -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
               -backend-config="key=services/confluence/${{ env.INFRA_APP_NAME_ENV }}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
-          # terraform apply -auto-approve
-          terraform plan
+          terraform apply -auto-approve
 
 
   deploy-step-function:
