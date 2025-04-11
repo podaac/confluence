@@ -233,7 +233,8 @@ jobs:
       TARGET_ENV: ${{ needs.build.outputs.target_env }}
     steps:
       # GitHub repo
-      - uses: actions/checkout@v4
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
 
       # AWS Credentials
       - name: Configure AWS credentials
@@ -260,9 +261,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Create ECR repositories and push docker images to ECR
-      - name: Create AWS ECR Repository
-        working-directory: deploy/
-        run: ./deploy-container.sh $REGISTRY ${{ env.PREFIX_ENV }} ${{ env.APP_VERSION }} 
+      - name: Create and push to AWS ECR repository
+        run: deploy/deploy-containers.sh $REGISTRY ${{ env.PREFIX_ENV }} ${{ env.APP_VERSION }} 
 
 
   deploy:

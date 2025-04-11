@@ -16,7 +16,7 @@ declare -a containers=("init-workflow")
 
 for container in "${containers[@]}"; do
     echo $container
-    ./deploy-ecr.sh $REGISTRY $PREFIX-$container
+    deploy/deploy-ecr.sh $REGISTRY $PREFIX-$container
 
     container_underscore=${container//-/_}
     image_tag=$(echo $VERSION | cut -c1-5)
