@@ -11,10 +11,25 @@ terraform {
 }
 
 provider "aws" {
+  default_tags {
+    tags = local.default_tags
+  }
   region  = var.aws_region
 }
 
+# Locals
+locals {
+  account_id = data.aws_caller_identity.current.account_id
+  default_tags = length(var.default_tags) == 0 ? {
+    application : var.app_name,
+    environment : lower(var.environment),
+    version : var.app_version
+  } : var.default_tags
+}
+
 # Data
+data "aws_caller_identity" "current" {}
+
 data "aws_vpc" "application_vpc" {
   tags = {
     "Name" : "Application VPC"
@@ -50,7 +65,7 @@ data "aws_security_group" "vpc_default_sg" {
 
 # Infrastructure
 module "confluence-terraform" {
-  source            = "./confluence-terraform/workflow-infrastructure"
+  source            = "git::https://github.com/SWOT-Confluence/confluence-terraform//workflow-infrastructure/modules/infra?ref=1.0.0"
   app_name          = var.app_name
   app_version       = var.app_version
   aws_region        = var.aws_region
@@ -61,4 +76,14 @@ module "confluence-terraform" {
   vpc_id            = data.aws_vpc.application_vpc.id
   vpc_sg_id         = data.aws_security_group.vpc_default_sg.id
   vpc_subnets       = values(data.aws_subnet.private_application_subnet_list).*.id
+}
+
+# Init Workflow
+module "init-workflow" {
+  source            = "git::https://github.com/SWOT-Confluence/init_workflow//terraform/modules/init?ref=1.0.0"
+  app_name          = var.app_name
+  app_version       = var.app_version
+  aws_region        = var.aws_region
+  environment       = var.environment
+  prefix            = var.prefix
 }

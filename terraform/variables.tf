@@ -15,6 +15,11 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
+variable "default_tags" {
+  type    = map(string)
+  default = {}
+}
+
 variable "ec2_key_pair" {
   type        = string
   description = "Key pair used to access EFS EC2 instances"

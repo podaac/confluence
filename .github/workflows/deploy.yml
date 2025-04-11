@@ -158,31 +158,12 @@ jobs:
           echo "TARGET_ENV=OPS" >> $GITHUB_ENV
           echo "PREFIX_ENV=svc-confluence-ops" >> $GITHUB_ENV
 
-      # Validate infrastructure terraform files
+      # Validate terraform files
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Validate podaac terraform
-        run: |
-          terraform init -backend=false
-          terraform validate -no-color
-
-      - name: Validate infrastructure terraform
-        working-directory: confluence-terraform/workflow-infrastructure/
-        run: |
-          terraform init -backend=false
-          terraform validate -no-color
-
-      # Validate step function terraform files
-      - name: Validate step function terraform
-        working-directory: confluence-terraform/workflow-step-function/
-        run: |
-          terraform init -backend=false
-          terraform validate -no-color
-
-      # Validate init workflow terraform files
-      - name: Validate init workflow terraform
-        working-directory: init_workflow/terraform
+        working-directory: terraform/
         run: |
           terraform init -backend=false
           terraform validate -no-color
@@ -198,28 +179,6 @@ jobs:
               --org=${{ secrets.SNYK_ORG_ID }}
               --severity-threshold=high
               --report
-
-      # SNYK Python
-      - name: Run Snyk Python to test
-        uses: snyk/actions/python-3.10@master
-        env:
-            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: test
-          args: >
-              --org=${{ secrets.SNYK_ORG_ID }}
-              --project-name=${{ github.repository }}
-              --severity-threshold=high
-              --fail-on=all
-      - name: Run Snyk Python to report
-        uses: snyk/actions/python-3.10@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          args: >
-            --org=${{ secrets.SNYK_ORG_ID }}
-            --project-name=${{ github.repository }}
 
       - name: Commit version bump and define output
         # If building an alpha, release candidate, or release then we commit the version bump back to the repo
@@ -273,6 +232,9 @@ jobs:
       PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
       TARGET_ENV: ${{ needs.build.outputs.target_env }}
     steps:
+      # GitHub repo
+      - uses: actions/checkout@v4
+
       # AWS Credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -289,9 +251,6 @@ jobs:
         with:
           mask-password: 'true'
 
-      # GitHub repo
-      - uses: actions/checkout@v4
-
       # GHCR.IO login
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -300,32 +259,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Init workflow
-      - name: Define ECR registry, repository, and image tag names
-        run : |
-          echo "REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
-          echo "REPOSITORY_INIT=${{ env.PREFIX_ENV }}-${{ env.INIT_APP_NAME_ENV }}" >> $GITHUB_ENV
-
-      # Create ECR repository (if it does not exist)
+      # Create ECR repositories and push docker images to ECR
       - name: Create AWS ECR Repository
-        run: deploy/deploy-ecr.sh $REGISTRY $REPOSITORY_INIT
+        working-directory: deploy/
+        run: ./deploy-container.sh $REGISTRY ${{ env.PREFIX_ENV }} ${{ env.APP_VERSION }} 
 
-      # Pull and push Docker container image by version tag and to latest tag
-      - name: Pull ghcr.io container and push to AWS ECR
-        run: |
-          init_container=${{ env.INIT_APP_NAME_ENV }}
-          init_container_underscore=${init_container//-/_}
-          image_tag_full=${{ env.APP_VERSION }}
-          image_tag=$(echo $image_tag_full | cut -c1-5)
-
-          docker pull ghcr.io/swot-confluence/${init_container_underscore}:latest
-          docker tag ghcr.io/swot-confluence/${init_container_underscore}:latest $REGISTRY/$REPOSITORY_INIT:$image_tag
-          docker push $REGISTRY/$REPOSITORY_INIT:$image_tag
-          docker tag ghcr.io/swot-confluence/${init_container_underscore}:latest $REGISTRY/$REPOSITORY_INIT:latest
-          docker push $REGISTRY/$REPOSITORY_INIT:latest
 
   deploy:
-    name: Deploy infrastructure
+    name: Deploy Terraform
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     needs: [build, container]
@@ -363,28 +304,11 @@ jobs:
           echo "TF_VAR_permissions_boundary=${{ secrets[format('PERMISSIONS_BOUNDARY_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
 
-      - name: Initialize and deploy top-level Terraform
+      - name: Initialize and deploy Terraform
+        working-directory: terraform/
         run: |
           terraform init -reconfigure \
               -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
               -backend-config="key=services/confluence/${{ env.INFRA_APP_NAME_ENV }}.tfstate" \
               -backend-config="region=${AWS_DEFAULT_REGION}"
           terraform apply -auto-approve
-
-      - name: Initialize and deploy Init Workflow Terraform
-        working-directory: init_workflow/terraform/
-        run: |
-          terraform init -reconfigure \
-              -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
-              -backend-config="key=services/confluence/${{ env.INIT_APP_NAME_ENV }}.tfstate" \
-              -backend-config="region=${AWS_DEFAULT_REGION}"
-          terraform apply -auto-approve
-
-      # - name: Initialize and deploy SFN Terraform
-      #   working-directory: confluence-terraform/workflow-step-function/
-      #   run: |
-      #     terraform init -reconfigure \
-      #         -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
-      #         -backend-config="key=services/confluence/${SFN_APP_NAME_ENV}.tfstate" \
-      #         -backend-config="region=${AWS_DEFAULT_REGION}"
-      #     terraform apply -auto-approve
