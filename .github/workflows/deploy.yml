@@ -262,9 +262,7 @@ jobs:
 
       # Create ECR repositories and push docker images to ECR
       - name: Create and push to AWS ECR repository
-        env:
-          $REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: deploy/deploy-containers.sh $REGISTRY ${{ env.PREFIX_ENV }} ${{ env.APP_VERSION }} 
+        run: deploy/deploy-containers.sh ${{ steps.login-ecr.outputs.registry }} ${{ env.PREFIX_ENV }} ${{ env.APP_VERSION }} 
 
 
   deploy:
