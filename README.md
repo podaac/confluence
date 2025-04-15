@@ -67,6 +67,10 @@ To deploy:
 
 Pulls in SWOT-Confluence container images from `ghcr.io` and pushes them to the Amazon ECR.
 
+*NOTE: This should be run after the Terraform deployment.*
+
+Command line arguments:
+
 - [1] registry: Registry URI
 - [2] prefix: Venue deployment prefix
 - [3] version: Application version
