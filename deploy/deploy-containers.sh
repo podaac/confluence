@@ -5,8 +5,9 @@
 # Command line arguments:
 # [1] registry: Registry URI
 # [2] prefix: Venue deployment prefix
+# [3] version: Application version
 # 
-# Example usage: ./delpoy-ecr.sh "account-id.dkr.ecr.region.amazonaws.com" "svc-confluence-sit" "1.0.0"
+# Example usage: ./delpoy-containers.sh "account-id.dkr.ecr.region.amazonaws.com" "svc-confluence-sit" "1.0.0"
 
 REGISTRY=$1
 PREFIX=$2
