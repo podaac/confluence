@@ -8,6 +8,7 @@ Confluence repositories:
 
 - Clean Up: https://github.com/SWOT-Confluence/clean_up
 - Combine Data:https://github.com/SWOT-Confluence/combine_data
+- H2IVDI: https://github.com/SWOT-Confluence/h2ivdi
 - Init Workflow: https://github.com/SWOT-Confluence/init_workflow
 - Input: https://github.com/SWOT-Confluence/input
 - MetroMan: https://github.com/SWOT-Confluence/metroman
@@ -23,6 +24,7 @@ Confluence repositories:
 - Report: https://github.com/SWOT-Confluence/report
 - SAD: https://github.com/SWOT-Confluence/sad
 - Setfinder: https://github.com/SWOT-Confluence/setfinder
+- SIC4DVAR: https://github.com/SWOT-Confluence/sic4dvar
 - SoS Read: https://github.com/SWOT-Confluence/sos_read
 - Validation: https://github.com/SWOT-Confluence/validation
 
