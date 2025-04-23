@@ -27,6 +27,7 @@ Confluence repositories:
 - SIC4DVAR: https://github.com/SWOT-Confluence/sic4dvar
 - SoS Read: https://github.com/SWOT-Confluence/sos_read
 - Validation: https://github.com/SWOT-Confluence/validation
+- Publish CNM: https://github.com/podaac/confluence_publish_cnm
 
 ## aws infrastructure
 
