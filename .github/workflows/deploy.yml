@@ -298,6 +298,7 @@ jobs:
         run: |
           echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
           echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_sns_email_alarms=${{ secrets['SNS_TOPIC_EMAIL_ALARMS'] }}" >> $GITHUB_ENV
           echo "TF_VAR_environment=${{ env.TARGET_ENV }}" >> $GITHUB_ENV
           echo "TF_VAR_prefix=${{ env.PREFIX_ENV }}" >> $GITHUB_ENV
           echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
