@@ -1,5 +1,5 @@
 # CloudWatch Alarm
-resource "aws_cloudwatch_metric_alarm" "aws_cloudwatch_ec2_vcpu_alarm" {
+resource "aws_cloudwatch_metric_alarm" "aws_cloudwatch_fargate_vcpu_alarm" {
   alarm_name          = "${var.prefix}-fargate-vcpu-alarm"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
@@ -29,10 +29,10 @@ resource "aws_cloudwatch_metric_alarm" "aws_cloudwatch_ec2_vcpu_alarm" {
   }
 }
 
-resource "aws_sns_topic_subscription" "aws_sns_topic_batch_job_failure_subscription" {
+resource "aws_sns_topic_subscription" "aws_sns_topic_cw_alarm_subscription" {
   endpoint  = var.sns_email_alarms
   protocol  = "email"
-  topic_arn = aws_sns_topic.aws_sns_topic_batch_job_failure.arn
+  topic_arn = aws_sns_topic.aws_sns_topic_cloudwatch_alarms.arn
 }
 
 # SNS Topic for CloudWatch alarms
