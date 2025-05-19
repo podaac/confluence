@@ -28,6 +28,10 @@ Confluence repositories:
 - SoS Read: https://github.com/SWOT-Confluence/sos_read
 - Validation: https://github.com/SWOT-Confluence/validation
 - Publish CNM: https://github.com/podaac/confluence_publish_cnm
+- Suspended Sediment Concentration (SSC) Input: https://github.com/SWOT-Confluence/ssc_input/actions
+- Suspended Sediment Concentration (SSC) Model Deployment: https://github.com/SWOT-Confluence/ssc_model_deployment
+- Lakeflow Input and Deploy:https://github.com/SWOT-Confluence/LakeFlow_Confluence
+- Confluence-Terraform (Infrastructure, Step Function): https://github.com/SWOT-Confluence/confluence-terraform
 
 ## aws infrastructure
 
