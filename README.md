@@ -16,7 +16,7 @@ Confluence repositories:
 - MOI: https://github.com/SWOT-Confluence/moi
 - MOMMA: https://github.com/SWOT-Confluence/momma
 - neoBAM: https://github.com/SWOT-Confluence/neobam
-- Offline: https://github.com/SWOT-Confluence/offline
+- Offline: https://github.com/SWOT-Confluence/offline-discharge-data-product-creation
 - Output: https://github.com/SWOT-Confluence/output
 - Postdiagnostics: https://github.com/SWOT-Confluence/postdiagnostics
 - Prediagnostics: https://github.com/SWOT-Confluence/prediagnostics
