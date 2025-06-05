@@ -1,0 +1,5 @@
+environment = "SIT"
+prefix = "confluence-sit"
+app_version = "2.0.0"
+ec2_key_pair = "ntebaldi-ngap-sit"
+sns_email_reports = "nicole.tebaldi@jpl.nasa.gov"
