@@ -59,7 +59,25 @@ variable "docker_images" {
   type = list(string)
   description = "List of Docker container images to push to ECR"
   default = [
-    "swot-confluence/clean_up"
+    "swot-confluence/clean_up",
+    "swot-confluence/combine_data",
+    "swot-confluence/init_workflow",
+    "swot-confluence/input",
+    "swot-confluence/metroman",
+    "swot-confluence/metroman_consolidation",
+    "swot-confluence/moi",
+    "swot-confluence/momma",
+    "swot-confluence/neobam",
+    "swot-confluence/offline-discharge-data-product-creation",
+    "swot-confluence/output",
+    "swot-confluence/postdiagnostics_moi",
+    "swot-confluence/postdiagnostics_flpe",
+    "swot-confluence/prediagnostics",
+    "swot-confluence/priors",
+    "swot-confluence/report",
+    "swot-confluence/sad",
+    "swot-confluence/setfinder",
+    "swot-confluence/validation"
   ]
 }
 
