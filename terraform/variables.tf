@@ -62,3 +62,9 @@ variable "docker_images" {
     "swot-confluence/clean_up"
   ]
 }
+
+variable "docker_registry" {
+  type = string
+  description = "Docker container registry to pull images from"
+  default = "ghcr.io"
+}

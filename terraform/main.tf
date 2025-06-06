@@ -20,6 +20,9 @@ provider "aws" {
   default_tags {
     tags = local.default_tags
   }
+  ignore_tags {
+    key_prefixes = ["gsfc-ngap"]
+  }
   region  = var.aws_region
 }
 
