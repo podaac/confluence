@@ -26,18 +26,24 @@ provider "aws" {
   region  = var.aws_region
 }
 
-provider "docker" {
+provider "docker" {}
+
+# Data
+data "aws_caller_identity" "current" {}
+
+data "local_file" "pyproject_toml" {
+  filename = "${path.module}/../pyproject.toml"
 }
 
 # Locals
 locals {
   account_id = data.aws_caller_identity.current.account_id
+  app_version = var.app_version != null ? var.app_version : (
+    regex("version = \"([0-9]+\\.[0-9]+\\.[0-9]+)\"", data.local_file.pyproject_toml.content)[0]
+  )
   default_tags = length(var.default_tags) == 0 ? {
     application : var.app_name,
     environment : lower(var.environment),
-    version : var.app_version
+    version : local.app_version
   } : var.default_tags
 }
-
-# Data
-data "aws_caller_identity" "current" {}

@@ -11,7 +11,7 @@ data "aws_ecr_authorization_token" "default" {}
 
 data "docker_registry_image" "confluence" {
   for_each = aws_ecr_repository.confluence
-  name = "${var.docker_registry}/${each.value.name}:${var.app_version}"
+  name = "${var.docker_registry}/${each.value.name}:${local.app_version}"
 }
 
 resource "docker_image" "confluence" {
@@ -28,6 +28,9 @@ resource "docker_tag" "confluence" {
 
 resource "docker_registry_image" "confluence" {
   for_each = docker_tag.confluence
+  lifecycle {
+    ignore_changes = [auth_config]
+  }
   name = each.value.target_image
   keep_remotely = true
 
