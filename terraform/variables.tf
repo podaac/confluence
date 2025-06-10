@@ -64,6 +64,8 @@ variable "docker_images" {
     "swot-confluence/combine_data",
     "swot-confluence/init_workflow",
     "swot-confluence/input",
+    "swot-confluence/lakeflow_deploy",
+    "swot-confluence/lakeflow_input",
     "swot-confluence/metroman",
     "swot-confluence/metroman_consolidation",
     "swot-confluence/moi",
@@ -78,6 +80,9 @@ variable "docker_images" {
     "swot-confluence/report",
     "swot-confluence/sad",
     "swot-confluence/setfinder",
+    "swot-confluence/sic4dvar",
+    "swot-confluence/ssc_input",
+    "swot-confluence/ssc_model_deployment",
     "swot-confluence/validation"
   ]
 }
