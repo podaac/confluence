@@ -7,14 +7,14 @@ then
     exit 1
 fi
 
+APP_VERSION=$(poetry version -s)
 VENUE=$1
 shift
 
 cd "$(dirname $BASH_SOURCE)/../"
-source "envs/$VENUE.env"
 
-export TF_IN_AUTOMATION=true  # https://www.terraform.io/cli/config/environment-variables#tf_in_automation
-export TF_INPUT=false  # https://www.terraform.io/cli/config/environment-variables#tf_input
+export TF_IN_AUTOMATION="true"  # https://www.terraform.io/cli/config/environment-variables#tf_in_automation
+export TF_INPUT="false"  # https://www.terraform.io/cli/config/environment-variables#tf_input
 
 export TF_VAR_region="$REGION"
 export TF_VAR_stage="$VENUE"
@@ -22,4 +22,4 @@ export TF_VAR_stage="$VENUE"
 # Generate confluence.tf from template
 envsubst < confluence.tf.tmpl > confluence.tf
 
-terraform init -reconfigure -backend-config="bucket=$BUCKET" -backend-config="region=$REGION"
+terraform init -reconfigure -backend-config="tfvars/$VENUE.backend.tfvars"
