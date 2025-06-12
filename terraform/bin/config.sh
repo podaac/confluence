@@ -3,23 +3,25 @@ set -eo pipefail
 
 if [ ! $# -eq 1 ]
 then
-    echo "$(caller | cut -d' ' -f2) venue"
+    echo "$(caller | cut -d' ' -f2) environment"
     exit 1
 fi
 
 APP_VERSION=$(poetry version -s)
-VENUE=$1
+ENVIRONMENT=$1
 shift
 
 cd "$(dirname $BASH_SOURCE)/../"
+source env/$ENVIRONMENT.env
 
 export TF_IN_AUTOMATION="true"  # https://www.terraform.io/cli/config/environment-variables#tf_in_automation
 export TF_INPUT="false"  # https://www.terraform.io/cli/config/environment-variables#tf_input
 
-export TF_VAR_region="$REGION"
-export TF_VAR_stage="$VENUE"
+export TF_VAR_app_version="$APP_VERSION"
+export TF_VAR_region="$AWS_REGION"
+export TF_VAR_environment="$ENVIRONMENT"
 
 # Generate confluence.tf from template
 envsubst < confluence.tf.tmpl > confluence.tf
 
-terraform init -reconfigure -backend-config="tfvars/$VENUE.backend.tfvars"
+terraform init -backend-config="bucket=$BACKEND_BUCKET" -reconfigure

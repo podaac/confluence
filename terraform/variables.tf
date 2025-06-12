@@ -1,4 +1,4 @@
-variable "api_key" {
+variable "hydrocron_api_key" {
   type        = string
   description = "API key to query Hydrocron"
 }
