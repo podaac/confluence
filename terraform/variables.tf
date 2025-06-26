@@ -31,7 +31,7 @@ variable "ec2_key_pair" {
   description = "Key pair used to access EFS EC2 instances"
 }
 
-variable "lpdaac_user" {
+variable "lpdaac_username" {
   type        = string
   description = "Username to retrieve LPDAAC data"
 }

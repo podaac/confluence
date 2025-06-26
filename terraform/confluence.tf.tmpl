@@ -7,7 +7,7 @@ module "infrastructure" {
   ec2_key_pair      = var.ec2_key_pair
   sns_email_reports = var.sns_email_reports
   environment       = var.environment
-  lpdaac_user       = var.lpdaac_user
+  lpdaac_user       = var.lpdaac_username
   lpdaac_password   = var.lpdaac_password
   prefix            = var.prefix
   vpc_id            = data.aws_vpc.application_vpc.id
