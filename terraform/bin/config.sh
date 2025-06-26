@@ -7,7 +7,7 @@ then
     exit 1
 fi
 
-export APP_VERSION="${APP_VERSION:=$(poetry version -s)}"
+export APP_VERSION="${APP_VERSION:=$(grep -m 1 version pyproject.toml | awk -F ' = ' '{print $2}' | sed 's/"//g')}"
 export ENVIRONMENT=$1
 shift
 

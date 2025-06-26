@@ -244,6 +244,8 @@ jobs:
           echo "TF_VAR_hydrocron_api_key=${{ secrets[format('HYDROCRON_API_KEY_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_lpdaac_username=${{ secrets['LPDAAC_USERNAME'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_lpdaac_password=${{ secrets['LPDAAC_PASSWORD'] }}" >> $GITHUB_ENV
           echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
 
       - name: Initialize and deploy Terraform
