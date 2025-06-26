@@ -36,12 +36,8 @@ concurrency:
 
 # Environment variables
 env:
-  INFRA_APP_NAME_ENV: 'confluence'
-  SFN_APP_NAME_ENV: 'confluence-sfn'
-  INIT_APP_NAME_ENV: 'init-workflow'
   POETRY_VERSION: "2.1.1"
   PYTHON_VERSION: "3.10"
-  REGISTRY: ghcr.io
 
 jobs:
   build:
@@ -95,8 +91,6 @@ jobs:
         run: |
           echo "APP_VERSION=${{ steps.get-version.outputs.current_version }}" >> $GITHUB_ENV
           echo "TARGET_ENV=${{ github.event.inputs.venue }}" >> $GITHUB_ENV
-          target_env=${{ github.event.inputs.venue }}
-          echo "PREFIX_ENV=svc-confluence-$(echo "$target_env" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Bump pre-alpha version
         # If triggered by push to a non-tracked branch (SIT)
@@ -109,7 +103,6 @@ jobs:
           poetry version $new_ver
           echo "APP_VERSION=$new_ver" >> $GITHUB_ENV
           echo "TARGET_ENV=SIT" >> $GITHUB_ENV
-          echo "PREFIX_ENV=svc-confluence-sit" >> $GITHUB_ENV
 
       - name: Bump alpha version
         # If triggered by push to the develop branch (SIT)
@@ -121,7 +114,6 @@ jobs:
           poetry version prerelease
           echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
           echo "TARGET_ENV=SIT" >> $GITHUB_ENV
-          echo "PREFIX_ENV=svc-confluence-sit" >> $GITHUB_ENV
 
       - name: Bump rc version
         # If triggered by push to a release branch (UAT)
@@ -140,7 +132,6 @@ jobs:
           fi
           echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
           echo "TARGET_ENV=UAT" >> $GITHUB_ENV
-          echo "PREFIX_ENV=svc-confluence-uat" >> $GITHUB_ENV
 
       - name: Release version
         # If triggered by push to the main branch (OPS)
@@ -156,7 +147,6 @@ jobs:
           poetry version ${CURRENT_VERSION%%rc*}
           echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
           echo "TARGET_ENV=OPS" >> $GITHUB_ENV
-          echo "PREFIX_ENV=svc-confluence-ops" >> $GITHUB_ENV
 
       # Validate terraform files
       - name: Setup terraform
@@ -218,61 +208,16 @@ jobs:
       - name: Save output
         id: output
         run: |
-          echo "app_version=${{ env.APP_VERSION }}" >> $GITHUB_OUTPUT
-          echo "prefix_env=${{ env.PREFIX_ENV }}" >> $GITHUB_OUTPUT
           echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
-          echo target_env_lowercase=${{ env.TARGET_ENV }} | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
-
-  container:
-    name: Build and deploy container images
-    runs-on: ubuntu-latest
-    needs: build
-    env:
-      APP_VERSION: ${{ needs.build.outputs.app_version }}
-      PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
-      TARGET_ENV: ${{ needs.build.outputs.target_env }}
-    steps:
-      # GitHub repo
-      - name: Checkout GitHub repo
-        uses: actions/checkout@v4
-
-      # AWS Credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV)] }}
-          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV)] }}
-          aws-region: us-west-2
-          mask-aws-account-id: true
-
-      # ECR Login
-      - name: Login to AWS ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          mask-password: 'true'
-
-      # GHCR.IO login
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Create ECR repositories and push docker images to ECR
-      - name: Create and push to AWS ECR repository
-        run: deploy/deploy-containers.sh ${{ steps.login-ecr.outputs.registry }} ${{ env.PREFIX_ENV }} ${{ env.APP_VERSION }} 
-
+          echo "target_env_lowercase=${{ env.TARGET_ENV }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy Terraform
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    needs: [build, container]
+    needs: [build]
     env:
       APP_VERSION: ${{ needs.build.outputs.app_version }}
-      PREFIX_ENV: ${{ needs.build.outputs.prefix_env }}
       TARGET_ENV: ${{ needs.build.outputs.target_env }}
       TARGET_ENV_LOWERCASE: ${{ needs.build.outputs.target_env_lowercase }}
     steps:
@@ -293,22 +238,14 @@ jobs:
       # Set up Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-      
+
       - name: Define TF_VAR values
         run: |
-          echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
-          echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
-          echo "TF_VAR_environment=${{ env.TARGET_ENV }}" >> $GITHUB_ENV
-          echo "TF_VAR_prefix=${{ env.PREFIX_ENV }}" >> $GITHUB_ENV
+          echo "TF_VAR_hydrocron_api_key=${{ secrets[format('HYDROCRON_API_KEY_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
-          echo "TF_VAR_permissions_boundary=${{ secrets[format('PERMISSIONS_BOUNDARY_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
-          echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
+          echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
 
       - name: Initialize and deploy Terraform
         working-directory: terraform/
-        run: |
-          terraform init -reconfigure \
-              -backend-config="bucket=podaac-services-${{ env.TARGET_ENV_LOWERCASE }}-terraform" \
-              -backend-config="key=services/confluence/${{ env.INFRA_APP_NAME_ENV }}.tfstate" \
-              -backend-config="region=${AWS_DEFAULT_REGION}"
-          terraform apply -auto-approve
+        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }}
