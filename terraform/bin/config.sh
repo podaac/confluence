@@ -7,11 +7,12 @@ then
     exit 1
 fi
 
-export APP_VERSION="${APP_VERSION:=$(grep -m 1 version pyproject.toml | awk -F ' = ' '{print $2}' | sed 's/"//g')}"
+cd "$(dirname $BASH_SOURCE)/../"
+
+export APP_VERSION="${APP_VERSION:=$(grep -m 1 version ../pyproject.toml | awk -F ' = ' '{print $2}' | sed 's/"//g')}"
 export ENVIRONMENT=$1
 shift
 
-cd "$(dirname $BASH_SOURCE)/../"
 source env/$ENVIRONMENT.env
 
 export TF_IN_AUTOMATION="true"  # https://www.terraform.io/cli/config/environment-variables#tf_in_automation
