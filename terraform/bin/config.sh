@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-if [ ! $# -eq 1 ]
+if [ $# -eq 0 ]
 then
     echo "$(caller | cut -d' ' -f2) environment"
     exit 1
