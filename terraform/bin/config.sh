@@ -7,8 +7,8 @@ then
     exit 1
 fi
 
-APP_VERSION=$(poetry version -s)
-ENVIRONMENT=$1
+export APP_VERSION="${APP_VERSION:=$(poetry version -s)}"
+export ENVIRONMENT=$1
 shift
 
 cd "$(dirname $BASH_SOURCE)/../"
