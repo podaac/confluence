@@ -250,4 +250,4 @@ jobs:
 
       - name: Initialize and deploy Terraform
         working-directory: terraform/
-        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }}
+        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve
