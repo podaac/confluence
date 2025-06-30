@@ -38,21 +38,22 @@ resource "terraform_data" "docker_registry_image" {
     aws_ecr_repository.confluence
   ]
   triggers_replace = [ each.value.sha256_digest ]
+  input = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
 
   provisioner "local-exec" {
     interpreter = ["bash", "-c"]
     command = <<EOF
       set -eo pipefail
       docker pull "${each.value.name}"
-      docker tag "${each.value.name}" "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
-      docker push "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
-      docker rmi "${each.value.name}" "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
+      docker tag "${each.value.name}" "${self.input}"
+      docker push "${self.input}"
+      docker rmi "${each.value.name}" "${self.input}"
     EOF
   }
 
   provisioner "local-exec" {
     when = destroy
     interpreter = ["bash", "-c"]
-    command = "docker rmi ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}:${var.app_version}"
+    command = "docker rmi ${self.input}"
   }
 }
