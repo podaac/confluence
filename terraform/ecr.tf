@@ -25,11 +25,6 @@ data "docker_registry_image" "confluence" {
 }
 
 resource "terraform_data" "docker_ecr_login" {
-  triggers_replace = [
-    data.aws_ecr_authorization_token.default.authorization_token,
-    data.aws_ecr_authorization_token.default.proxy_endpoint
-  ]
-
   provisioner "local-exec" {
     interpreter = ["bash", "-c"]
     command = "echo ${data.aws_ecr_authorization_token.default.authorization_token} | base64 --decode | cut -d ':' -f 2 | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.default.proxy_endpoint}"
@@ -38,7 +33,10 @@ resource "terraform_data" "docker_ecr_login" {
 
 resource "terraform_data" "docker_registry_image" {
   for_each = data.docker_registry_image.confluence
-  depends_on = [ terraform_data.docker_ecr_login ]
+  depends_on = [
+    terraform_data.docker_ecr_login,
+    aws_ecr_repository.confluence
+  ]
   triggers_replace = [ each.value.sha256_digest ]
 
   provisioner "local-exec" {
@@ -50,5 +48,11 @@ resource "terraform_data" "docker_registry_image" {
       docker push "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
       docker rmi "${each.value.name}" "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
     EOF
+  }
+
+  provisioner "local-exec" {
+    when = destroy
+    interpreter = ["bash", "-c"]
+    command = "docker rmi ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}:${var.app_version}"
   }
 }
