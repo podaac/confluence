@@ -14,6 +14,8 @@ resource "aws_ecr_repository" "confluence" {
   for_each = local.images
   name = each.value.destination_repository
 
+  force_delete = true
+
   image_scanning_configuration {
     scan_on_push = true
   }
@@ -49,11 +51,5 @@ resource "terraform_data" "docker_registry_image" {
       docker push "${self.input}"
       docker rmi "${each.value.name}" "${self.input}"
     EOF
-  }
-
-  provisioner "local-exec" {
-    when = destroy
-    interpreter = ["bash", "-c"]
-    command = "docker rmi ${self.input}"
   }
 }
