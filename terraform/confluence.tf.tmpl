@@ -23,6 +23,7 @@ module "step_function" {
   aws_region             = var.aws_region
   environment            = var.environment
   prefix                 = var.prefix
+  s3_json_bucket         = module.infrastructure.s3_bucket_json
 }
 
 # -- Clean Up --
