@@ -248,6 +248,13 @@ jobs:
           echo "TF_VAR_lpdaac_password=${{ secrets['LPDAAC_PASSWORD'] }}" >> $GITHUB_ENV
           echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
 
+      - name: Check free disk space
+        run: df -h
+
       - name: Initialize and deploy Terraform
+        continue-on-error: true
         working-directory: terraform/
         run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve
+
+      - name: Check free disk space after deploy
+        run: df -h
