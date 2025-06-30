@@ -27,6 +27,11 @@ data "docker_registry_image" "confluence" {
 }
 
 resource "terraform_data" "docker_ecr_login" {
+  triggers_replace = [
+    data.aws_ecr_authorization_token.default.authorization_token,
+    data.aws_ecr_authorization_token.default.proxy_endpoint
+  ]
+
   provisioner "local-exec" {
     interpreter = ["bash", "-c"]
     command = "echo ${data.aws_ecr_authorization_token.default.authorization_token} | base64 --decode | cut -d ':' -f 2 | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.default.proxy_endpoint}"
