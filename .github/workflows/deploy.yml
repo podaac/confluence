@@ -250,5 +250,5 @@ jobs:
 
       - name: Initialize and deploy Terraform
         working-directory: terraform/
-        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve
-
+        # Limit concurrency to 5 to prevent out of disk errors during ECR image push
+        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve -parallelism=5
