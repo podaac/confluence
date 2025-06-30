@@ -24,18 +24,31 @@ data "docker_registry_image" "confluence" {
   name = each.value.source_name
 }
 
-resource "terraform_data" "docker_registry_image" {
-  for_each = data.docker_registry_image.confluence
-
-  lifecycle {
-    replace_triggered_by = [ each.value.sha256_digest ]
-  }
+resource "terraform_data" "docker_ecr_login" {
+  triggers_replace = [
+    data.aws_ecr_authorization_token.default.authorization_token,
+    data.aws_ecr_authorization_token.default.proxy_endpoint
+  ]
 
   provisioner "local-exec" {
-    command = (
-      "docker pull ${each.value.name} && " +
-      "docker tag ${each.value.name} ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)",image)[0]}:${var.app_version} && " +
-      "docker push ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.prefix}-${regex(".+\\/(.+)",image)[0]}:${var.app_version} && " +
-      "docker rmi ${each.value.name} ${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.prefix}-${regex(".+\\/(.+)",image)[0]}:${var.app_version}"
-    )
+    interpreter = ["bash", "-c"]
+    command = "echo ${data.aws_ecr_authorization_token.default.authorization_token} | base64 --decode | cut -d ':' -f 2 | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.default.proxy_endpoint}"
+  }
+}
+
+resource "terraform_data" "docker_registry_image" {
+  for_each = data.docker_registry_image.confluence
+  depends_on = [ terraform_data.docker_ecr_login ]
+  triggers_replace = [ each.value.sha256_digest ]
+
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command = <<EOF
+      set -eo pipefail
+      docker pull "${each.value.name}"
+      docker tag "${each.value.name}" "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
+      docker push "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
+      docker rmi "${each.value.name}" "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}-${regex(".+\\/(.+)", each.value.name)[0]}"
+    EOF
+  }
 }
