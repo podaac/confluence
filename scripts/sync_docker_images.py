@@ -87,6 +87,7 @@ def main():
         if source_hash != dest_hash:
             logging.info(f"Sync needed due to hash mismatch for image: {image['source_name']} -> {image['destination_name']}")
             sync_needed.append(image)
+            continue
 
         logging.info(f"Sync not needed for image: {image['source_name']} -> {image['destination_name']}")
 
