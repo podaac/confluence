@@ -1,8 +1,3 @@
-variable "hydrocron_api_key" {
-  type        = string
-  description = "API key to query Hydrocron"
-}
-
 variable "app_name" {
   type        = string
   description = "Application name"
@@ -21,28 +16,38 @@ variable "aws_region" {
 }
 
 variable "default_tags" {
-  type    = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
 
 variable "ec2_key_pair" {
   type        = string
   description = "Key pair used to access EFS EC2 instances"
+  sensitive   = true
+}
+
+variable "hydrocron_api_key" {
+  type        = string
+  description = "API key to query Hydrocron"
+  sensitive   = true
 }
 
 variable "lpdaac_username" {
   type        = string
   description = "Username to retrieve LPDAAC data"
+  sensitive   = true
 }
 
 variable "lpdaac_password" {
   type        = string
   description = "Password to retrieve LPDAAC data"
+  sensitive   = true
 }
 
 variable "sns_email_reports" {
   type        = string
   description = "Email address to SNS topic reports to"
+  sensitive   = true
 }
 
 variable "environment" {
@@ -56,9 +61,9 @@ variable "prefix" {
 }
 
 variable "docker_images" {
-  type = list(string)
+  type        = list(string)
   description = "List of Docker container images to push to ECR"
-  default = [
+  default     = [
     "swot-confluence/clean_up",
     "swot-confluence/combine_data",
     "swot-confluence/init_workflow",
@@ -87,7 +92,7 @@ variable "docker_images" {
 }
 
 variable "docker_registry" {
-  type = string
+  type        = string
   description = "Docker container registry to pull images from"
-  default = "ghcr.io"
+  default     = "ghcr.io"
 }
