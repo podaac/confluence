@@ -235,6 +235,16 @@ jobs:
           aws-region: us-west-2
           mask-aws-account-id: true
 
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
       # Set up Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -252,3 +262,6 @@ jobs:
         working-directory: terraform/
         # Limit concurrency to 5 to prevent out of disk errors during ECR image push
         run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve -parallelism=5
+
+      - name: Sync Docker images
+        run: python3 ./scripts/sync_docker_images.py
