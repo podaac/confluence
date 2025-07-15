@@ -260,8 +260,7 @@ jobs:
 
       - name: Initialize and deploy Terraform
         working-directory: terraform/
-        # Limit concurrency to 5 to prevent out of disk errors during ECR image push
-        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve -parallelism=5
+        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve
 
       - name: Sync Docker images
         run: python3 ./scripts/sync_docker_images.py
