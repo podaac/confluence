@@ -2,7 +2,7 @@ data "aws_ecr_authorization_token" "default" {}
 
 locals {
   source_docker_registry = var.docker_registry
-  destination_docker_registry ="${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
+  destination_docker_registry = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
 
   images = {
     for image in var.docker_images : image => {
