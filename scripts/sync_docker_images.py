@@ -9,7 +9,7 @@ from pathlib import Path
 import urllib.error
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 docker_image_re = re.compile(
     r'^(?:(?P<server>[^/]+(?:\.[^/]+)+(?:[:][0-9]+)?)/)?(?P<image>[^:]+)(?::(?P<tag>[^@]+))?$'
@@ -74,7 +74,7 @@ def main():
         try:
             dest_res = request.urlopen(dest_req)
         except urllib.error.HTTPError as ex:
-            if ex.status == 404:  # Image not found; needs a sync
+            if ex.code == 404:  # Image not found; needs a sync
                 logging.info(f"Sync needed due to image not found: {image['destination_name']}")
                 sync_needed.append(image)
                 continue
