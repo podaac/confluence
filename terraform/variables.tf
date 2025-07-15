@@ -1,6 +1,7 @@
 variable "hydrocron_api_key" {
   type        = string
   description = "API key to query Hydrocron"
+  sensitive   = true
 }
 
 variable "app_name" {
