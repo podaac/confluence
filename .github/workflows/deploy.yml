@@ -25,8 +25,8 @@ on:
             type: choice
             description: Venue to deploy to
             options:
-                - DEV1
-                - DEV2
+                - SIT
+                - UAT
                 - OPS
 
 # Only allow 1 execution of this workflow to be running at any given time per-branch.
@@ -36,8 +36,6 @@ concurrency:
 
 # Environment variables
 env:
-  INFRA_APP_NAME_ENV: 'confluence'
-  SFN_APP_NAME_ENV: 'confluence-sfn'
   POETRY_VERSION: "2.1.1"
   PYTHON_VERSION: "3.10"
 
@@ -48,6 +46,11 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
+    outputs:
+      app_version: ${{ steps.output.outputs.app_version }}
+      prefix_env: ${{ steps.output.outputs.prefix_env }}
+      target_env: ${{ steps.output.outputs.target_env }}
+      target_env_lowercase: ${{ steps.output.outputs.target_env_lowercase }}
     steps:
       # Create a release and set deployment environment
       - uses: getsentry/action-github-app-token@v3
@@ -60,6 +63,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           token: ${{ steps.podaac-cicd.outputs.token }}
+          submodules: 'recursive'
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -87,11 +91,9 @@ jobs:
         run: |
           echo "APP_VERSION=${{ steps.get-version.outputs.current_version }}" >> $GITHUB_ENV
           echo "TARGET_ENV=${{ github.event.inputs.venue }}" >> $GITHUB_ENV
-          target_env=${{ github.event.inputs.venue }}
-          echo "PREFIX_ENV=confluence-$(echo "$target_env" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Bump pre-alpha version
-        # If triggered by push to a non-tracked branch (DEV1)
+        # If triggered by push to a non-tracked branch (SIT)
         if: |
           github.ref != 'refs/heads/develop' &&
           github.ref != 'refs/heads/main' &&
@@ -100,11 +102,10 @@ jobs:
           new_ver="${{ steps.get-version.outputs.current_version }}+$(git rev-parse --short ${GITHUB_SHA})"
           poetry version $new_ver
           echo "APP_VERSION=$new_ver" >> $GITHUB_ENV
-          echo "TARGET_ENV=DEV1" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-dev1" >> $GITHUB_ENV
+          echo "TARGET_ENV=SIT" >> $GITHUB_ENV
 
       - name: Bump alpha version
-        # If triggered by push to the develop branch (DEV1)
+        # If triggered by push to the develop branch (SIT)
         if: |
           github.ref == 'refs/heads/develop' &&
           steps.manual.conclusion == 'skipped'
@@ -112,11 +113,10 @@ jobs:
         run: |
           poetry version prerelease
           echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
-          echo "TARGET_ENV=DEV1" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-dev1" >> $GITHUB_ENV
+          echo "TARGET_ENV=SIT" >> $GITHUB_ENV
 
       - name: Bump rc version
-        # If triggered by push to a release branch (DEV2)
+        # If triggered by push to a release branch (UAT)
         if: |
           startsWith(github.ref, 'refs/heads/release/') &&
           steps.manual.conclusion == 'skipped'
@@ -131,8 +131,7 @@ jobs:
             poetry version ${GITHUB_REF#refs/heads/release/}rc1
           fi
           echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
-          echo "TARGET_ENV=DEV2" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-dev2" >> $GITHUB_ENV
+          echo "TARGET_ENV=UAT" >> $GITHUB_ENV
 
       - name: Release version
         # If triggered by push to the main branch (OPS)
@@ -148,21 +147,13 @@ jobs:
           poetry version ${CURRENT_VERSION%%rc*}
           echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
           echo "TARGET_ENV=OPS" >> $GITHUB_ENV
-          echo "PREFIX_ENV=confluence-OPS" >> $GITHUB_ENV
 
-      # Validate infrastructure terraform files
+      # Validate terraform files
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Validate infrastructure terraform
-        working-directory: workflow-infrastructure/
-        run: |
-          terraform init -backend=false
-          terraform validate -no-color
-      
-      # Validate step function terraform files
-      - name: Validate step function terraform
-        working-directory: workflow-step-function/
+      - name: Validate podaac terraform
+        working-directory: terraform/
         run: |
           terraform init -backend=false
           terraform validate -no-color
@@ -178,8 +169,8 @@ jobs:
               --org=${{ secrets.SNYK_ORG_ID }}
               --severity-threshold=high
               --report
-      
-      - name: Commit version bump
+
+      - name: Commit version bump and define output
         # If building an alpha, release candidate, or release then we commit the version bump back to the repo
         if: |
           steps.alpha.conclusion == 'success'   ||
@@ -213,95 +204,63 @@ jobs:
           name: ${{ env.APP_VERSION }}
           prerelease: ${{ steps.alpha.conclusion == 'success' || steps.rc.conclusion == 'success'}}
           tag: ${{ env.APP_VERSION }}
-    
-  deploy-infrastructure:
-    name: Deploy infrastructure
+
+      - name: Save output
+        id: output
+        run: |
+          echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
+          echo "target_env_lowercase=${{ env.TARGET_ENV }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy Terraform
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build]
+    env:
+      APP_VERSION: ${{ needs.build.outputs.app_version }}
+      TARGET_ENV: ${{ needs.build.outputs.target_env }}
+      TARGET_ENV_LOWERCASE: ${{ needs.build.outputs.target_env_lowercase }}
     steps:
       # Check out GitHub repo
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
-      # # Configure credentials 
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_{0}', env.TARGET_ENV)] }}
-      #     aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_{0}', env.TARGET_ENV)] }}
-      #     aws-region: us-west-2
-      #     mask-aws-account-id: true
+      # Configure credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV)] }}
+          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV)] }}
+          aws-region: us-west-2
+          mask-aws-account-id: true
 
-      # # Set up Terraform
-      # - name: Setup Terraform
-      #   uses: hashicorp/setup-terraform@v3
-      
-      # - name: Define TF_VAR values
-      #   run: |
-      #     echo "TF_VAR_app_version=$APP_VERSION" >> $GITHUB_ENV
-      #     echo "TF_VAR_environment=$TARGET_ENV" >> $GITHUB_ENV
-      #     echo "TF_VAR_prefix=$PREFIX_ENV" >> $GITHUB_ENV
-      #     echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_ssh_subnet=${{ secrets['SSH_SUBNET'] }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_subnet_a_public_cidr=${{ secrets['PUBLIC_SUBNET'] }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_subnet_a_private_cidr=${{ secrets['PRIVATE_SUBNET_A'] }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_subnet_b_cidr=${{ secrets['PRIVATE_SUBNET_B'] }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_subnet_c_cidr=${{ secrets['PRIVATE_SUBNET_C'] }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_subnet_d_cidr=${{ secrets['PRIVATE_SUBNET_D'] }}" >> $GITHUB_ENV
-      #     echo "TF_VAR_vpc_cidr=${{ secrets['VPC_CIDR'] }}" >> $GITHUB_ENV
-      #     echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Initialize Terraform
-      #   working-directory: workflow-infrastructure/
-      #   run: |
-      #     terraform init -reconfigure \
-      #         -backend-config="bucket=${PREFIX_ENV}-tf-state" \
-      #         -backend-config="key=${INFRA_APP_NAME_ENV}.tfstate" \
-      #         -backend-config="region=${AWS_DEFAULT_REGION}"
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
-      # # Deploy AWS infrastructure
-      # - name: Deploy Terraform
-      #   working-directory: workflow-infrastructure/
-      #   run: terraform apply -auto-approve
+      # Set up Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-  deploy-step-function:
-    name: Deploy step function
-    runs-on: ubuntu-latest
-    needs: deploy-infrastructure
-    steps:
+      - name: Define TF_VAR values
+        run: |
+          echo "TF_VAR_hydrocron_api_key=${{ secrets['HYDROCRON_API_KEY'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_lpdaac_username=${{ secrets['LPDAAC_USERNAME'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_lpdaac_password=${{ secrets['LPDAAC_PASSWORD'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
 
-      # Check out GitHub repo
-      - uses: actions/checkout@v4
+      - name: Initialize and deploy Terraform
+        working-directory: terraform/
+        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve
 
-      # # Configure credentials 
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v4
-      #   with:
-      #     aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_{0}', env.TARGET_ENV)] }}
-      #     aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_{0}', env.TARGET_ENV)] }}
-      #     aws-region: us-west-2
-      #     mask-aws-account-id: true
-
-      # # Set up Terraform
-      # - name: Setup Terraform
-      #   uses: hashicorp/setup-terraform@v3
-      
-      # - name: Define TF_VAR values
-      #   run: |
-      #     echo "TF_VAR_app_version=$APP_VERSION" >> $GITHUB_ENV
-      #     echo "TF_VAR_environment=$TARGET_ENV" >> $GITHUB_ENV
-      #     echo "TF_VAR_prefix=$PREFIX_ENV" >> $GITHUB_ENV
-      #     echo "TF_IN_AUTOMATION=true" >> $GITHUB_ENV
-
-      # - name: Initialize Terraform
-      #   working-directory: workflow-step-function/
-      #   run: |
-      #     terraform init -reconfigure \
-      #         -backend-config="bucket=${PREFIX_ENV}-tf-state" \
-      #         -backend-config="key=${SFN_APP_NAME_ENV}.tfstate" \
-      #         -backend-config="region=${AWS_DEFAULT_REGION}"
-
-      # # Deploy AWS infrastructure
-      # - name: Deploy Terraform
-      #   working-directory: workflow-step-function/
-      #   run: terraform apply -auto-approve
+      - name: Sync Docker images
+        run: python3 ./scripts/sync_docker_images.py

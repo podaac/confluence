@@ -6,25 +6,32 @@
 
 Confluence repositories:
 
-- Clean Up: https://github.com/podaac/confluence_clean_up
-- Combine Data:https://github.com/podaac/confluence_combine_data
-- Init Workflow: https://github.com/podaac/confluence_init_workflow
-- Input: https://github.com/podaac/confluence_input
-- MetroMan: https://github.com/podaac/confluence_metroman
-- MetroMan Consolidation: https://github.com/podaac/confluence_metroman_consolidation
-- MOI: https://github.com/podaac/confluence_moi
-- MOMMA: https://github.com/podaac/confluence_momma
-- neoBAM: https://github.com/podaac/confluence_neobam
-- Offline: https://github.com/podaac/confluence_offline
-- Output: https://github.com/podaac/confluence_output
-- Postdiagnostics: https://github.com/podaac/confluence_postdiagnostics
-- Prediagnostics: https://github.com/podaac/confluence_prediagnostics
-- Priors: https://github.com/podaac/confluence_priors
-- Report: https://github.com/podaac/confluence_report
-- SAD: https://github.com/podaac/confluence_sad
-- Setfinder: https://github.com/podaac/confluence_setfinder
-- SoS Read: https://github.com/podaac/confluence_sos_read
-- Validation: https://github.com/podaac/confluence_validation
+- Clean Up: https://github.com/SWOT-Confluence/clean_up
+- Combine Data:https://github.com/SWOT-Confluence/combine_data
+- H2IVDI: https://github.com/SWOT-Confluence/h2ivdi
+- Init Workflow: https://github.com/SWOT-Confluence/init_workflow
+- Input: https://github.com/SWOT-Confluence/input
+- MetroMan: https://github.com/SWOT-Confluence/metroman
+- MetroMan Consolidation: https://github.com/SWOT-Confluence/metroman_consolidation
+- MOI: https://github.com/SWOT-Confluence/moi
+- MOMMA: https://github.com/SWOT-Confluence/momma
+- neoBAM: https://github.com/SWOT-Confluence/neobam
+- Offline: https://github.com/SWOT-Confluence/offline-discharge-data-product-creation
+- Output: https://github.com/SWOT-Confluence/output
+- Postdiagnostics: https://github.com/SWOT-Confluence/postdiagnostics
+- Prediagnostics: https://github.com/SWOT-Confluence/prediagnostics
+- Priors: https://github.com/SWOT-Confluence/priors
+- Report: https://github.com/SWOT-Confluence/report
+- SAD: https://github.com/SWOT-Confluence/sad
+- Setfinder: https://github.com/SWOT-Confluence/setfinder
+- SIC4DVAR: https://github.com/SWOT-Confluence/sic4dvar
+- SoS Read: https://github.com/SWOT-Confluence/sos_read
+- Validation: https://github.com/SWOT-Confluence/validation
+- Publish CNM: https://github.com/podaac/confluence_publish_cnm
+- Suspended Sediment Concentration (SSC) Input: https://github.com/SWOT-Confluence/ssc_input/actions
+- Suspended Sediment Concentration (SSC) Model Deployment: https://github.com/SWOT-Confluence/ssc_model_deployment
+- Lakeflow Input and Deploy:https://github.com/SWOT-Confluence/LakeFlow_Confluence
+- Confluence-Terraform (Infrastructure, Step Function): https://github.com/SWOT-Confluence/confluence-terraform
 
 ## aws infrastructure
 
@@ -55,27 +62,24 @@ Deploys AWS infrastructure and stores state in an S3 backend. This top-level ter
 To deploy:
 
 1. Edit `conf.tfvars` for environment to deploy to.
-2. Initialize terraform: `terraform init -reconfigure -backend-config="bucket=confluence-<env>-tf-state" -backend-config="key=confluence.tfstate" -backend-config="region=us-west-2" -backend-config="profile=<named_profile>"`
+2. Initialize terraform: `terraform init -reconfigure -backend-config="bucket=podaac-services-<env>-terraform" -backend-config="key=services/confluence/confluence.tfstate" -backend-config="region=us-west-2" -backend-config="profile=<named_profile>"`
 3. Plan terraform modifications: `terraform plan -var-file="conf.tfvars" -out="tfplan"`
 4. Apply terraform modifications: `terraform apply tfplan`
 
-`<env>` can be `dev1`, `dev2`, `dev3` or `ops`
+`<env>` can be `sit`, `uat`, or `ops`
 
 `<named_profile>` is the name of the profile used to authenticate to AWS
 
-### deployment script
+## docker images
 
-Script to deploy Terraform AWS infrastructure
+Pulls in SWOT-Confluence container images from `ghcr.io` and pushes them to the Amazon ECR.
 
-REQUIRES:
-  
-- AWS CLI (https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-- Terraform (https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+*NOTE: This should be run after the Terraform deployment.*
 
 Command line arguments:
 
-[1] s3_state_bucket: Name of the S3 bucket to store Terraform state in (no need for s3:// prefix)
+- [1] registry: Registry URI
+- [2] prefix: Venue deployment prefix
+- [3] version: Application version
 
-[2] profile: Name of profile used to authenticate AWS CLI commands
-
-Example usage: `./deploy.sh "s3-state-bucket-name" "confluence-named-profile"`
+Example usage: `./delpoy-containers.sh "account-id.dkr.ecr.region.amazonaws.com" "svc-confluence-sit" "1.0.0"`
