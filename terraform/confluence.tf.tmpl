@@ -1,6 +1,6 @@
 # -- Shared Infrastructure --
 module "infrastructure" {
-  source            = "git::https://github.com/SWOT-Confluence/confluence-terraform//workflow-infrastructure/modules/infra?ref=$APP_VERSION"
+  source            = "git::https://github.com/SWOT-Confluence/confluence-terraform//workflow-infrastructure/modules/infra?ref=$INFRA_VERSION"
   app_name          = var.app_name
   app_version       = var.app_version
   aws_region        = var.aws_region
@@ -17,7 +17,7 @@ module "infrastructure" {
 
 # -- Step Function --
 module "step_function" {
-  source                 = "git::https://github.com/SWOT-Confluence/confluence-terraform//workflow-step-function/modules/sfn?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/confluence-terraform//workflow-step-function/modules/sfn?ref=$SFN_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -28,7 +28,7 @@ module "step_function" {
 
 # -- Clean Up --
 module "clean_up" {
-  source                 = "git::https://github.com/SWOT-Confluence/clean_up//terraform/modules/clean?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/clean_up//terraform/modules/clean?ref=$CLEAN_UP_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -42,7 +42,7 @@ module "clean_up" {
 
 # -- Combine Data --
 module "combine_data" {
-  source                 = "git::https://github.com/SWOT-Confluence/combine_data//terraform/modules/combine?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/combine_data//terraform/modules/combine?ref=$COMBINE_DATA_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -56,7 +56,7 @@ module "combine_data" {
 
 # -- Init Workflow --
 module "init_workflow" {
-  source                 = "git::https://github.com/SWOT-Confluence/init_workflow//terraform/modules/init?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/init_workflow//terraform/modules/init?ref=$INIT_WORKFLOW_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -70,7 +70,7 @@ module "init_workflow" {
 
 # -- Input --
 module "input" {
-  source                 = "git::https://github.com/SWOT-Confluence/input//terraform/modules/input?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/input//terraform/modules/input?ref=$INPUT_VERSION"
   api_key                = var.hydrocron_api_key
   app_name               = var.app_name
   app_version            = var.app_version
@@ -85,7 +85,7 @@ module "input" {
 
 # -- Lakeflow --
 module "lakeflow" {
-  source                 = "git::https://github.com/SWOT-Confluence/LakeFlow_Confluence//terraform/modules/lakeflow?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/LakeFlow_Confluence//terraform/modules/lakeflow?ref=$LAKEFLOW_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -99,7 +99,7 @@ module "lakeflow" {
 
 # -- MetroMan --
 module "metroman" {
-  source                 = "git::https://github.com/SWOT-Confluence/metroman//terraform/modules/metroman?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/metroman//terraform/modules/metroman?ref=$METROMAN_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -113,7 +113,7 @@ module "metroman" {
 
 # -- MetroMan Consolidation --
 module "metroman_consolidation" {
-  source                 = "git::https://github.com/SWOT-Confluence/metroman_consolidation//terraform/modules/metroman_consolidation?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/metroman_consolidation//terraform/modules/metroman_consolidation?ref=$MMC_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -127,7 +127,7 @@ module "metroman_consolidation" {
 
 # -- MOI --
 module "moi" {
-  source                 = "git::https://github.com/SWOT-Confluence/moi//terraform/modules/moi?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/moi//terraform/modules/moi?ref=$MOI_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -141,7 +141,7 @@ module "moi" {
 
 # -- MOMMA --
 module "momma" {
-  source                 = "git::https://github.com/SWOT-Confluence/momma//terraform/modules/momma?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/momma//terraform/modules/momma?ref=$MOMMA_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -155,7 +155,7 @@ module "momma" {
 
 # -- neoBAM --
 module "neobam" {
-  source                 = "git::https://github.com/SWOT-Confluence/neobam//terraform/modules/neobam?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/neobam//terraform/modules/neobam?ref=$NEOBAM_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -169,7 +169,7 @@ module "neobam" {
 
 # -- Offline --
 module "offline" {
-  source                 = "git::https://github.com/SWOT-Confluence/offline-discharge-data-product-creation//terraform/modules/offline?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/offline-discharge-data-product-creation//terraform/modules/offline?ref=$OFFLINE_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -183,7 +183,7 @@ module "offline" {
 
 # -- Output --
 module "output" {
-  source                 = "git::https://github.com/SWOT-Confluence/output//terraform/modules/output?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/output//terraform/modules/output?ref=$OUTPUT_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -197,7 +197,7 @@ module "output" {
 
 # -- Postdiagnostics --
 module "postdiagnostics" {
-  source                 = "git::https://github.com/SWOT-Confluence/postdiagnostics//terraform/modules/postdiagnostics?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/postdiagnostics//terraform/modules/postdiagnostics?ref=$POSTDIAGNOSTICS_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -211,7 +211,7 @@ module "postdiagnostics" {
 
 # -- Prediagnostics --
 module "prediagnostics" {
-  source                 = "git::https://github.com/SWOT-Confluence/prediagnostics//terraform/modules/prediagnostics?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/prediagnostics//terraform/modules/prediagnostics?ref=$PREDIAGNOSTICS_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -225,7 +225,7 @@ module "prediagnostics" {
 
 # -- Priors --
 module "priors" {
-  source                 = "git::https://github.com/SWOT-Confluence/priors//terraform/modules/priors?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/priors//terraform/modules/priors?ref=$PRIORS_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -239,7 +239,7 @@ module "priors" {
 
 # -- Report --
 module "report" {
-  source                 = "git::https://github.com/SWOT-Confluence/report//terraform/modules/report?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/report//terraform/modules/report?ref=$REPORT_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -252,7 +252,7 @@ module "report" {
 
 # -- SAD --
 module "sad" {
-  source                 = "git::https://github.com/SWOT-Confluence/sad//terraform/modules/sad?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/sad//terraform/modules/sad?ref=$SAD_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -266,7 +266,7 @@ module "sad" {
 
 # -- Setfinder --
 module "setfinder" {
-  source                 = "git::https://github.com/SWOT-Confluence/setfinder//terraform/modules/setfinder?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/setfinder//terraform/modules/setfinder?ref=$SETFINDER_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -280,7 +280,7 @@ module "setfinder" {
 
 # -- SIC4DVAR --
 module "sic4dvar" {
-  source                 = "git::https://github.com/SWOT-Confluence/sic4dvar//terraform/modules/sic4dvar?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/sic4dvar//terraform/modules/sic4dvar?ref=$SIC4DVAR_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -294,7 +294,7 @@ module "sic4dvar" {
 
 # -- SSC Input --
 module "ssc_input" {
-  source                 = "git::https://github.com/SWOT-Confluence/ssc_input//terraform/modules/ssc_input?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/ssc_input//terraform/modules/ssc_input?ref=$SSC_INPUT_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -308,7 +308,7 @@ module "ssc_input" {
 
 # -- SSC Model Deployment --
 module "ssc_model_deployment" {
-  source                 = "git::https://github.com/SWOT-Confluence/ssc_model_deployment//terraform/modules/ssc_model_deployment?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/ssc_model_deployment//terraform/modules/ssc_model_deployment?ref=$SSC_MODEL_DEPLOYMENT_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -322,7 +322,7 @@ module "ssc_model_deployment" {
 
 # -- Validation --
 module "validation" {
-  source                 = "git::https://github.com/SWOT-Confluence/validation//terraform/modules/validation?ref=$APP_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/validation//terraform/modules/validation?ref=$VALIDATION_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
