@@ -16,8 +16,8 @@ variable "aws_region" {
 }
 
 variable "default_tags" {
-  type        = map(string)
-  default     = {}
+  type    = map(string)
+  default = {}
 }
 
 variable "ec2_key_pair" {
@@ -50,6 +50,11 @@ variable "sns_email_reports" {
   sensitive   = true
 }
 
+variable "sns_email_alarms" {
+  type        = string
+  description = "Email address to Cloud Metric Alarm notifications to"
+}
+
 variable "environment" {
   type        = string
   description = "The environment in which to deploy to"
@@ -63,7 +68,7 @@ variable "prefix" {
 variable "docker_images" {
   type        = list(string)
   description = "List of Docker container images to push to ECR"
-  default     = [
+  default = [
     "swot-confluence/clean_up",
     "swot-confluence/combine_data",
     "swot-confluence/init_workflow",
