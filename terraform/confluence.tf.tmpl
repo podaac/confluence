@@ -1,0 +1,335 @@
+# -- Shared Infrastructure --
+module "infrastructure" {
+  source            = "git::https://github.com/SWOT-Confluence/confluence-terraform//workflow-infrastructure/modules/infra?ref=$APP_VERSION"
+  app_name          = var.app_name
+  app_version       = var.app_version
+  aws_region        = var.aws_region
+  ec2_key_pair      = var.ec2_key_pair
+  sns_email_reports = var.sns_email_reports
+  environment       = var.environment
+  lpdaac_user       = var.lpdaac_username
+  lpdaac_password   = var.lpdaac_password
+  prefix            = var.prefix
+  vpc_id            = data.aws_vpc.application_vpc.id
+  vpc_sg_id         = data.aws_security_group.vpc_default_sg.id
+  vpc_subnets       = local.subnet_ids
+}
+
+# -- Step Function --
+module "step_function" {
+  source                 = "git::https://github.com/SWOT-Confluence/confluence-terraform//workflow-step-function/modules/sfn?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  environment            = var.environment
+  prefix                 = var.prefix
+  s3_json_bucket         = module.infrastructure.s3_bucket_json
+}
+
+# -- Clean Up --
+module "clean_up" {
+  source                 = "git::https://github.com/SWOT-Confluence/clean_up//terraform/modules/clean?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Combine Data --
+module "combine_data" {
+  source                 = "git::https://github.com/SWOT-Confluence/combine_data//terraform/modules/combine?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Init Workflow --
+module "init_workflow" {
+  source                 = "git::https://github.com/SWOT-Confluence/init_workflow//terraform/modules/init?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Input --
+module "input" {
+  source                 = "git::https://github.com/SWOT-Confluence/input//terraform/modules/input?ref=$APP_VERSION"
+  api_key                = var.hydrocron_api_key
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Lakeflow --
+module "lakeflow" {
+  source                 = "git::https://github.com/SWOT-Confluence/LakeFlow_Confluence//terraform/modules/lakeflow?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- MetroMan --
+module "metroman" {
+  source                 = "git::https://github.com/SWOT-Confluence/metroman//terraform/modules/metroman?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- MetroMan Consolidation --
+module "metroman_consolidation" {
+  source                 = "git::https://github.com/SWOT-Confluence/metroman_consolidation//terraform/modules/metroman_consolidation?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- MOI --
+module "moi" {
+  source                 = "git::https://github.com/SWOT-Confluence/moi//terraform/modules/moi?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- MOMMA --
+module "momma" {
+  source                 = "git::https://github.com/SWOT-Confluence/momma//terraform/modules/momma?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- neoBAM --
+module "neobam" {
+  source                 = "git::https://github.com/SWOT-Confluence/neobam//terraform/modules/neobam?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Offline --
+module "offline" {
+  source                 = "git::https://github.com/SWOT-Confluence/offline-discharge-data-product-creation//terraform/modules/offline?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Output --
+module "output" {
+  source                 = "git::https://github.com/SWOT-Confluence/output//terraform/modules/output?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Postdiagnostics --
+module "postdiagnostics" {
+  source                 = "git::https://github.com/SWOT-Confluence/postdiagnostics//terraform/modules/postdiagnostics?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Prediagnostics --
+module "prediagnostics" {
+  source                 = "git::https://github.com/SWOT-Confluence/prediagnostics//terraform/modules/prediagnostics?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Priors --
+module "priors" {
+  source                 = "git::https://github.com/SWOT-Confluence/priors//terraform/modules/priors?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Report --
+module "report" {
+  source                 = "git::https://github.com/SWOT-Confluence/report//terraform/modules/report?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- SAD --
+module "sad" {
+  source                 = "git::https://github.com/SWOT-Confluence/sad//terraform/modules/sad?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Setfinder --
+module "setfinder" {
+  source                 = "git::https://github.com/SWOT-Confluence/setfinder//terraform/modules/setfinder?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- SIC4DVAR --
+module "sic4dvar" {
+  source                 = "git::https://github.com/SWOT-Confluence/sic4dvar//terraform/modules/sic4dvar?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- SSC Input --
+module "ssc_input" {
+  source                 = "git::https://github.com/SWOT-Confluence/ssc_input//terraform/modules/ssc_input?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- SSC Model Deployment --
+module "ssc_model_deployment" {
+  source                 = "git::https://github.com/SWOT-Confluence/ssc_model_deployment//terraform/modules/ssc_model_deployment?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
+
+# -- Validation --
+module "validation" {
+  source                 = "git::https://github.com/SWOT-Confluence/validation//terraform/modules/validation?ref=$APP_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = var.app_version
+  prefix                 = var.prefix
+}
