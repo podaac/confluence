@@ -8,7 +8,7 @@ locals {
     for image in var.docker_images : image => {
       source_name            = "${var.docker_registry}/${image}:${var.confluence_app_version}"
       destination_repository = "${var.prefix}-${regex(".+\\/(.+)", image)[0]}"
-      destination_name       = "${local.destination_docker_registry}/${var.prefix}-${regex(".+\\/(.+)", image)[0]}:${var.confluence_app_version}"
+      destination_name       = replace("${local.destination_docker_registry}/${var.prefix}-${regex(".+\\/(.+)", image)[0]}:${var.confluence_app_version}", "_", "-")
     }
   }
 }
