@@ -103,6 +103,6 @@ variable "docker_registry" {
 }
 
 variable "confluence_app_version" {
-  type = string
+  type        = string
   description = "Confluence workflow application version number"
 }
