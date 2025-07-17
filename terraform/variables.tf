@@ -101,3 +101,8 @@ variable "docker_registry" {
   description = "Docker container registry to pull images from"
   default     = "ghcr.io"
 }
+
+variable "confluence_app_version" {
+  type = string
+  description = "Confluence workflow application version number"
+}
