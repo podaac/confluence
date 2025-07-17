@@ -50,6 +50,11 @@ variable "sns_email_reports" {
   sensitive   = true
 }
 
+variable "sns_email_alarms" {
+  type        = string
+  description = "Email address to Cloud Metric Alarm notifications to"
+}
+
 variable "environment" {
   type        = string
   description = "The environment in which to deploy to"
