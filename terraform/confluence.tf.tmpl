@@ -36,7 +36,7 @@ module "clean_up" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$CLEAN_UP_VERSION"
   prefix                 = var.prefix
 }
 
@@ -50,7 +50,7 @@ module "combine_data" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$COMBINE_DATA_VERSION"
   prefix                 = var.prefix
 }
 
@@ -64,7 +64,7 @@ module "init_workflow" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$INIT_WORKFLOW_VERSION"
   prefix                 = var.prefix
 }
 
@@ -79,7 +79,7 @@ module "input" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$INPUT_VERSION"
   prefix                 = var.prefix
 }
 
@@ -93,7 +93,7 @@ module "lakeflow" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$LAKEFLOW_VERSION"
   prefix                 = var.prefix
 }
 
@@ -107,7 +107,7 @@ module "metroman" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$METROMAN_VERSION"
   prefix                 = var.prefix
 }
 
@@ -121,7 +121,7 @@ module "metroman_consolidation" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$MMC_VERSION"
   prefix                 = var.prefix
 }
 
@@ -135,7 +135,7 @@ module "moi" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$MOI_VERSION"
   prefix                 = var.prefix
 }
 
@@ -149,7 +149,7 @@ module "momma" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$MOMMA_VERSION"
   prefix                 = var.prefix
 }
 
@@ -163,7 +163,7 @@ module "neobam" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$NEOBAM_VERSION"
   prefix                 = var.prefix
 }
 
@@ -177,7 +177,7 @@ module "offline" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$OFFLINE_VERSION"
   prefix                 = var.prefix
 }
 
@@ -191,7 +191,7 @@ module "output" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$OUTPUT_VERSION"
   prefix                 = var.prefix
 }
 
@@ -205,7 +205,7 @@ module "postdiagnostics" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$POSTDIAGNOSTICS_VERSION"
   prefix                 = var.prefix
 }
 
@@ -219,7 +219,7 @@ module "prediagnostics" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$PREDIAGNOSTICS_VERSION"
   prefix                 = var.prefix
 }
 
@@ -233,7 +233,7 @@ module "priors" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$PRIORS_VERSION"
   prefix                 = var.prefix
 }
 
@@ -246,7 +246,7 @@ module "report" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$REPORT_VERSION"
   prefix                 = var.prefix
 }
 
@@ -260,7 +260,7 @@ module "sad" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$SAD_VERSION"
   prefix                 = var.prefix
 }
 
@@ -274,7 +274,7 @@ module "setfinder" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$SETFINDER_VERSION"
   prefix                 = var.prefix
 }
 
@@ -288,7 +288,7 @@ module "sic4dvar" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$SIC4DVAR_VERSION"
   prefix                 = var.prefix
 }
 
@@ -302,7 +302,7 @@ module "ssc_input" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$SSC_INPUT_VERSION"
   prefix                 = var.prefix
 }
 
@@ -316,7 +316,7 @@ module "ssc_model_deployment" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$SSC_MODEL_DEPLOYMENT_VERSION"
   prefix                 = var.prefix
 }
 
@@ -330,6 +330,6 @@ module "validation" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = var.app_version
+  image_tag              = "$VALIDATION_VERSION"
   prefix                 = var.prefix
 }
