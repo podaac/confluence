@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     encrypt = true
-    key = "services/confluence/terraform.tfstate"
+    key     = "services/confluence/terraform.tfstate"
   }
   required_providers {
     aws = {
@@ -18,7 +18,7 @@ provider "aws" {
   ignore_tags {
     key_prefixes = ["gsfc-ngap"]
   }
-  region  = var.aws_region
+  region = var.aws_region
 }
 
 # Data

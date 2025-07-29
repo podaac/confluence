@@ -48,7 +48,6 @@ jobs:
         shell: bash -el {0}
     outputs:
       app_version: ${{ steps.output.outputs.app_version }}
-      prefix_env: ${{ steps.output.outputs.prefix_env }}
       target_env: ${{ steps.output.outputs.target_env }}
       target_env_lowercase: ${{ steps.output.outputs.target_env_lowercase }}
     steps:
@@ -208,6 +207,7 @@ jobs:
       - name: Save output
         id: output
         run: |
+          echo "app_version=${{ env.APP_VERSION }}" >> $GITHUB_OUTPUT
           echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
           echo "target_env_lowercase=${{ env.TARGET_ENV }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
 
@@ -254,6 +254,7 @@ jobs:
           echo "TF_VAR_hydrocron_api_key=${{ secrets['HYDROCRON_API_KEY'] }}" >> $GITHUB_ENV
           echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_sns_email_alarms=${{ secrets[format('SNS_TOPIC_EMAIL_ALARMS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
           echo "TF_VAR_lpdaac_username=${{ secrets['LPDAAC_USERNAME'] }}" >> $GITHUB_ENV
           echo "TF_VAR_lpdaac_password=${{ secrets['LPDAAC_PASSWORD'] }}" >> $GITHUB_ENV
           echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
