@@ -49,7 +49,7 @@ def main():
                 'Authorization': f'Bearer {source_auth_token}'
             }
         )
-        
+
         try:
             source_res = request.urlopen(source_req)
         except urllib.error.HTTPError as ex:
@@ -95,6 +95,10 @@ def main():
         logging.info(f"Syncing image: {image['source_name']} -> {image['destination_name']}")
         # Trigger the sync process here
         run_cmd(f"docker pull {image['source_name']}", stdout=sys.stdout, stderr=sys.stderr)
+
+        # Scan container image with Trivy
+        run_cmd(f"trivy image --severity HIGH,CRITICAL {image['source_name']}", stdout=sys.stdout, stderr=sys.stderr)
+
         run_cmd(f"docker tag {image['source_name']} {image['destination_name']}", stdout=sys.stdout, stderr=sys.stderr)
         run_cmd(f"docker push {image['destination_name']}", stdout=sys.stdout, stderr=sys.stderr)
         run_cmd(f"docker rmi {image['source_name']} {image['destination_name']}", stdout=sys.stdout, stderr=sys.stderr)
