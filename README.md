@@ -4,6 +4,8 @@
 
 ![Confluence Component Data Flow Diagram](diagrams/confluence-data-flow.png)
 
+Current Confluence workflow version: `2.0.0`
+
 Confluence repositories:
 
 - Clean Up: https://github.com/SWOT-Confluence/clean_up
