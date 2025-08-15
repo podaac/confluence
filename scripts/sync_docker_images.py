@@ -2,6 +2,7 @@
 import subprocess
 import urllib
 import json
+from os import getenv
 import re
 from urllib import request
 import sys
@@ -109,6 +110,8 @@ def main():
         run_cmd(f'docker tag {image['source_name']} {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
         run_cmd(f'docker push {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
         run_cmd(f'docker rmi {image['source_name']} {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
+
+    Path(getenv('GITHUB_OUTPUT')).write_text(f'synced_images={bool(sync_needed)}\n')
 
 
 def load_docker_auth(server):
