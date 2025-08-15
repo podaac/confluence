@@ -92,7 +92,7 @@ def main():
         logging.info(f'Sync not needed for image: {image['source_name']} -> {image['destination_name']}')
         
     logging.debug(f'Creating scans directory')
-    Path(__file__).parent.joinpath('..', 'scans').mkdir(exist_ok=True)
+    Path.cwd().joinpath('..', 'scans').mkdir(exist_ok=True)
 
     for image in sync_needed:
         logging.info(f'Syncing image: {image['source_name']} -> {image['destination_name']}')
