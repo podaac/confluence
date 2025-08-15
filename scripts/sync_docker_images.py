@@ -92,7 +92,8 @@ def main():
         logging.info(f'Sync not needed for image: {image['source_name']} -> {image['destination_name']}')
         
     logging.debug(f'Creating scans directory')
-    Path.cwd().joinpath('..', 'scans').mkdir(exist_ok=True)
+    scans_dir = Path.cwd().joinpath('..', 'scans')
+    scans_dir.mkdir(exist_ok=True)
 
     for image in sync_needed:
         logging.info(f'Syncing image: {image['source_name']} -> {image['destination_name']}')
@@ -100,8 +101,11 @@ def main():
         run_cmd(f'docker pull {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
 
         # Scan container image with Trivy
-        run_cmd(f'trivy image --severity HIGH,CRITICAL --format sarif --output ../scans/{image['destination_repository']}.sarif {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
+        sarif_file = scans_dir.joinpath(f'{image['destination_repository']}.sarif')
+        run_cmd(f'trivy image --severity HIGH,CRITICAL --format sarif --output {sarif_file} {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
+        add_category_to_scan(sarif_file, image['destination_repository'])
 
+        # Tag and push the image to the destination registry
         run_cmd(f'docker tag {image['source_name']} {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
         run_cmd(f'docker push {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
         run_cmd(f'docker rmi {image['source_name']} {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
@@ -112,7 +116,7 @@ def load_docker_auth(server):
     return config['auths'][server]['auth']
 
 
-def run_cmd(cmd, cwd=None, stdout=None, stderr=None):
+def run_cmd(cmd: str, cwd=None, stdout=None, stderr=None):
     if stdout is None:
         stdout = subprocess.PIPE
     if stderr is None:
@@ -120,6 +124,17 @@ def run_cmd(cmd, cwd=None, stdout=None, stderr=None):
     process = subprocess.Popen(cmd, shell=True, stdout=stdout, stderr=stderr, cwd=cwd)
     stdout, stderr = process.communicate()
     return process.returncode, stdout, stderr
+
+
+def add_category_to_scan(scan_file: Path, category: str):
+    with scan_file.open('r+') as f:
+        data = json.load(f)
+        data['runAutomationDetails'] = {
+            'id': category
+        }
+        f.seek(0)
+        json.dump(data, f, indent=2)
+        f.truncate()
 
 
 if __name__ == '__main__':
