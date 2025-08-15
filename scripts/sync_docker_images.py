@@ -131,10 +131,12 @@ def run_cmd(cmd: str, cwd=None, stdout=None, stderr=None):
 
 def add_category_to_scan(scan_file: Path, category: str):
     with scan_file.open('r+') as f:
-        data = json.load(f)
-        data['automationDetails'] = {
+        scan = json.load(f)
+
+        scan['runs'][0]['automationDetails'] = {
             'id': category
         }
+
         f.seek(0)
         json.dump(data, f, indent=2)
         f.truncate()
