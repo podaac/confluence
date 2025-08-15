@@ -100,7 +100,7 @@ def main():
         run_cmd(f'docker pull {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
 
         # Scan container image with Trivy
-        run_cmd(f'trivy image --severity HIGH,CRITICAL --format sarif --output ../scans/{image['source_name']}.sarif {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
+        run_cmd(f'trivy image --severity HIGH,CRITICAL --format sarif --output ../scans/{image['destination_name']}.sarif {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
 
         run_cmd(f'docker tag {image['source_name']} {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
         run_cmd(f'docker push {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
