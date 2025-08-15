@@ -138,7 +138,7 @@ def add_category_to_scan(scan_file: Path, category: str):
         }
 
         f.seek(0)
-        json.dump(data, f, indent=2)
+        json.dump(scan, f, indent=2)
         f.truncate()
 
 
