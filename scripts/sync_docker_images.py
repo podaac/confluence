@@ -21,7 +21,7 @@ def main():
     logging.info('Fetching Terraform output...')
     returncode, stdout, stderr = run_cmd('terraform output --json', cwd=Path(__file__).joinpath('../../terraform').resolve())
     if returncode != 0:
-        logging.error(f'Error running terraform output: {stderr.decode("utf-8")}')
+        logging.error(f'Error running terraform output: {stderr.decode('utf-8')}')
         sys.exit(1)
         
     terraform_output = json.loads(stdout.decode('utf-8'))
@@ -75,7 +75,7 @@ def main():
             dest_res = request.urlopen(dest_req)
         except urllib.error.HTTPError as ex:
             if ex.code == 404:  # Image not found; needs a sync
-                logging.info(f"Sync needed due to image not found: {image['destination_name']}")
+                logging.info(f'Sync needed due to image not found: {image['destination_name']}')
                 sync_needed.append(image)
                 continue
             else:
@@ -85,23 +85,26 @@ def main():
         dest_hash = dest_manifest['config']['digest']
 
         if source_hash != dest_hash:
-            logging.info(f"Sync needed due to hash mismatch for image: {image['source_name']} -> {image['destination_name']}")
+            logging.info(f'Sync needed due to hash mismatch for image: {image['source_name']} -> {image['destination_name']}')
             sync_needed.append(image)
             continue
 
-        logging.info(f"Sync not needed for image: {image['source_name']} -> {image['destination_name']}")
+        logging.info(f'Sync not needed for image: {image['source_name']} -> {image['destination_name']}')
+        
+    logging.debug(f'Creating scans directory')
+    Path(__file__).parent.joinpath('..', 'scans').mkdir(exist_ok=True)
 
     for image in sync_needed:
-        logging.info(f"Syncing image: {image['source_name']} -> {image['destination_name']}")
+        logging.info(f'Syncing image: {image['source_name']} -> {image['destination_name']}')
         # Trigger the sync process here
-        run_cmd(f"docker pull {image['source_name']}", stdout=sys.stdout, stderr=sys.stderr)
+        run_cmd(f'docker pull {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
 
         # Scan container image with Trivy
-        run_cmd(f"trivy image --severity HIGH,CRITICAL {image['source_name']}", stdout=sys.stdout, stderr=sys.stderr)
+        run_cmd(f'trivy image --severity HIGH,CRITICAL --format sarif --output ../scans/{image['source_name']}.sarif {image['source_name']}', stdout=sys.stdout, stderr=sys.stderr)
 
-        run_cmd(f"docker tag {image['source_name']} {image['destination_name']}", stdout=sys.stdout, stderr=sys.stderr)
-        run_cmd(f"docker push {image['destination_name']}", stdout=sys.stdout, stderr=sys.stderr)
-        run_cmd(f"docker rmi {image['source_name']} {image['destination_name']}", stdout=sys.stdout, stderr=sys.stderr)
+        run_cmd(f'docker tag {image['source_name']} {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
+        run_cmd(f'docker push {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
+        run_cmd(f'docker rmi {image['source_name']} {image['destination_name']}', stdout=sys.stdout, stderr=sys.stderr)
 
 
 def load_docker_auth(server):
