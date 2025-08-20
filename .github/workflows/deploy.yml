@@ -263,5 +263,18 @@ jobs:
         working-directory: terraform/
         run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve
 
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
+        with:
+          version: v0.65.0
+          cache: true
+
       - name: Sync Docker images
+        id: sync
         run: python3 ./scripts/sync_docker_images.py
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: steps.sync.outputs.synced_images == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ../scans
