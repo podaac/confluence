@@ -237,6 +237,20 @@ module "priors" {
   prefix                 = var.prefix
 }
 
+# -- Publish CNM --
+module "publish_cnm" {
+  source                 = "git::https://github.com/podaac/confluence_publish_cnm//terraform/modules/publish_cnm?ref=$PUBLISH_CNM_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = "$PUBLISH_CNM_VERSION"
+  prefix                 = var.prefix
+}
+
 # -- Report --
 module "report" {
   source                 = "git::https://github.com/SWOT-Confluence/report//terraform/modules/report?ref=$REPORT_VERSION"
