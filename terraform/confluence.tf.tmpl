@@ -350,7 +350,6 @@ module "hivdi" {
 }
 
 # -- Consensus
-# TBD
 module "consensus" {
   source                 = "git::https://github.com/SWOT-Confluence/consensu//terraform/modules/consensus?ref=$CONSENSUS_VERSION"
   app_name               = var.app_name
