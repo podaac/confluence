@@ -351,7 +351,7 @@ module "hivdi" {
 
 # -- Consensus
 module "consensus" {
-  source                 = "git::https://github.com/SWOT-Confluence/consensu//terraform/modules/consensus?ref=$CONSENSUS_VERSION"
+  source                 = "git::https://github.com/SWOT-Confluence/consensus//terraform/modules/consensus?ref=$CONSENSUS_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
