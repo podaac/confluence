@@ -71,6 +71,8 @@ variable "docker_images" {
   default = [
     "swot-confluence/clean_up",
     "swot-confluence/combine_data",
+    "swot-confluence/consensus",
+    "swot-confluence/h2ivdi",
     "swot-confluence/init_workflow",
     "swot-confluence/input",
     "swot-confluence/lakeflow_deploy",
