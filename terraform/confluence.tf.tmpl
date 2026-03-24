@@ -333,3 +333,33 @@ module "validation" {
   image_tag              = "$VALIDATION_VERSION"
   prefix                 = var.prefix
 }
+
+# -- h2ivdi --
+# this may not access the IAM roles or efs vars...
+module "hivdi" {
+  source                 = "git::https://github.com/SWOT-Confluence/h2ivdi//terraform/modules/hivdi?ref=$HIVDI_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+#  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+#  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+#  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+#  image_tag              = "$HIVDI_VERSION"
+  prefix                 = var.prefix
+}
+
+# -- Consensus
+module "consensus" {
+  source                 = "git::https://github.com/SWOT-Confluence/consensus//terraform/modules/consensus?ref=$CONSENSUS_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = "$CONSENSUS_VERSION"
+  prefix                 = var.prefix
+}
+

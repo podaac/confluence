@@ -1,0 +1,11 @@
+# Reach Files
+
+UAT Test / Devset test - these are the same files.
+- reaches_of_interest.devset.json
+- reaches_of_interest.uat.json
+
+SIT test is the region we've run in SIT. This should be the same as 'MVP' and is the ohio river basin.
+- reaches_of_interest.sit.json
+
+Interface Test - minimal set of reaches to test the interfaces quickly.
+reaches_of_interest.unit.json
