@@ -73,7 +73,7 @@ variable "docker_images" {
     "swot-confluence/clean_up",
     "swot-confluence/combine_data",
     "swot-confluence/consensus",
-    "swot-confluence/coastalQ",
+    "swot-confluence/coastalq",
     "swot-confluence/h2ivdi",
     "swot-confluence/init_workflow",
     "swot-confluence/input",
