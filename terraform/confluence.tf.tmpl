@@ -153,9 +153,9 @@ module "momma" {
   prefix                 = var.prefix
 }
 
-# -- neoBAM --
-module "neobam" {
-  source                 = "git::https://github.com/SWOT-Confluence/neobam//terraform/modules/neobam?ref=$NEOBAM_VERSION"
+# -- BUSBOI -- added in v4
+module "busboi" {
+  source                 = "git::https://github.com/SWOT-Confluence/BUSBOI//terraform/modules/busboi?ref=$BUSBOI_VERSION"
   app_name               = var.app_name
   app_version            = var.app_version
   aws_region             = var.aws_region
@@ -163,9 +163,38 @@ module "neobam" {
   environment            = var.environment
   iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
   iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-  image_tag              = "$NEOBAM_VERSION"
+  image_tag              = "$BUSBOI_VERSION"
   prefix                 = var.prefix
 }
+
+# -- COASTALQ -- added in v4
+module "coastalQ" {
+  source                 = "git::https://github.com/SWOT-Confluence/coastalQ//terraform/modules/coastalQ?ref=$COASTALQ_VERSION"
+  app_name               = var.app_name
+  app_version            = var.app_version
+  aws_region             = var.aws_region
+  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+  environment            = var.environment
+  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+  image_tag              = "$COASTALQ_VERSION"
+  prefix                 = var.prefix
+}
+
+
+# -- neoBAM -- removed in v4
+#module "neobam" {
+#  source                 = "git::https://github.com/SWOT-Confluence/neobam//terraform/modules/neobam?ref=$NEOBAM_VERSION"
+#  app_name               = var.app_name
+#  app_version            = var.app_version
+#  aws_region             = var.aws_region
+#  efs_file_system_ids    = module.infrastructure.efs_file_system_ids
+#  environment            = var.environment
+#  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
+#  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
+#  image_tag              = "$NEOBAM_VERSION"
+#  prefix                 = var.prefix
+#}
 
 # -- Offline --
 module "offline" {
