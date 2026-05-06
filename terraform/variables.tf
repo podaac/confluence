@@ -89,7 +89,6 @@ variable "docker_images" {
     "swot-confluence/postdiagnostics_flpe",
     "swot-confluence/prediagnostics",
     "swot-confluence/report",
-    "swot-confluence/sad",
     "swot-confluence/setfinder",
     "swot-confluence/sic4dvar",
     "swot-confluence/ssc_input",
