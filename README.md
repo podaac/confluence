@@ -85,3 +85,11 @@ Command line arguments:
 - [3] version: Application version
 
 Example usage: `./delpoy-containers.sh "account-id.dkr.ecr.region.amazonaws.com" "svc-confluence-sit" "1.0.0"`
+
+## work arounds
+The following image was too large for the github action to process and scan:
+```
+docker pull ghcr.io/swot-confluence/ssc_model_deployment:3.0.0
+```
+
+so we retag it for our AWS account and push it to ECR directly, bypassing the sync script if you rely on GH Actions.
