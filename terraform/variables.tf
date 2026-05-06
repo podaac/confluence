@@ -88,7 +88,6 @@ variable "docker_images" {
     "swot-confluence/postdiagnostics_moi",
     "swot-confluence/postdiagnostics_flpe",
     "swot-confluence/prediagnostics",
-    "swot-confluence/priors",
     "swot-confluence/report",
     "swot-confluence/sad",
     "swot-confluence/setfinder",
