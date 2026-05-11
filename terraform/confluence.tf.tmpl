@@ -374,7 +374,7 @@ module "hivdi" {
   environment            = var.environment
 #  iam_execution_role_arn = module.infrastructure.exec_iam_role_arn
 #  iam_job_role_arn       = module.infrastructure.batch_job_iam_role_arn
-#  image_tag              = "$HIVDI_VERSION"
+  image_tag              = "$HIVDI_VERSION"
   prefix                 = var.prefix
 }
 
