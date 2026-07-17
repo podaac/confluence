@@ -1,0 +1,280 @@
+# Main build pipeline that verifies and deploys the software
+name: Deploy 
+# Events that trigger the workflow
+on:
+  # Trigger based on push to all branches - TODO
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+      - 'feature/**'
+      - 'issue/**'
+      - 'issues/**'
+      - 'dependabot/**'
+    tags-ignore:
+      - '*'
+    # Do not trigger build if pyproject.toml was the only thing changed
+    paths-ignore:
+      - 'pyproject.toml'
+      - 'poetry.lock'
+  # Run workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+        venue:
+            type: choice
+            description: Venue to deploy to
+            options:
+                - SIT
+                - UAT
+                - OPS
+
+# Only allow 1 execution of this workflow to be running at any given time per-branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Environment variables
+env:
+  POETRY_VERSION: "2.1.1"
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  build:
+    name: Build, test, verify
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    outputs:
+      app_version: ${{ steps.output.outputs.app_version }}
+      target_env: ${{ steps.output.outputs.target_env }}
+      target_env_lowercase: ${{ steps.output.outputs.target_env_lowercase }}
+    steps:
+      # Create a release and set deployment environment
+      - uses: getsentry/action-github-app-token@v3
+        name: PO.DAAC CICD token
+        id: podaac-cicd
+        with:
+          app_id: ${{ secrets.CICD_APP_ID }}
+          private_key: ${{ secrets.CICD_APP_PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ steps.podaac-cicd.outputs.token }}
+          submodules: 'recursive'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
+      - name: Setup a local virtual environment
+        run: |
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+
+      # Get current version
+      - name: Get pre-build version
+        id: get-version
+        run: |
+          echo "poetry version"
+          echo "current_version=$(poetry version | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "pyproject_name=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
+
+      - name: Manual build
+        # If triggered by workflow dispatch, no version bump
+        if: github.event_name == 'workflow_dispatch'
+        id: manual
+        run: |
+          echo "APP_VERSION=${{ steps.get-version.outputs.current_version }}" >> $GITHUB_ENV
+          echo "TARGET_ENV=${{ github.event.inputs.venue }}" >> $GITHUB_ENV
+
+      - name: Bump pre-alpha version
+        # If triggered by push to a non-tracked branch (SIT)
+        if: |
+          github.ref != 'refs/heads/develop' &&
+          github.ref != 'refs/heads/main' &&
+          !startsWith(github.ref, 'refs/heads/release/')
+        run: |
+          new_ver="${{ steps.get-version.outputs.current_version }}+$(git rev-parse --short ${GITHUB_SHA})"
+          poetry version $new_ver
+          echo "APP_VERSION=$new_ver" >> $GITHUB_ENV
+          echo "TARGET_ENV=SIT" >> $GITHUB_ENV
+
+      - name: Bump alpha version
+        # If triggered by push to the develop branch (SIT)
+        if: |
+          github.ref == 'refs/heads/develop' &&
+          steps.manual.conclusion == 'skipped'
+        id: alpha
+        run: |
+          poetry version prerelease
+          echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
+          echo "TARGET_ENV=SIT" >> $GITHUB_ENV
+
+      - name: Bump rc version
+        # If triggered by push to a release branch (UAT)
+        if: |
+          startsWith(github.ref, 'refs/heads/release/') &&
+          steps.manual.conclusion == 'skipped'
+        id: rc
+        env:
+          # True if the version already has a 'rc' pre-release identifier
+          BUMP_RC: ${{ contains(steps.get-version.outputs.current_version, 'rc') }}
+        run: |
+          if [ "$BUMP_RC" = true ]; then
+            poetry version prerelease
+          else
+            poetry version ${GITHUB_REF#refs/heads/release/}rc1
+          fi
+          echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
+          echo "TARGET_ENV=UAT" >> $GITHUB_ENV
+
+      - name: Release version
+        # If triggered by push to the main branch (OPS)
+        if: |
+          startsWith(github.ref, 'refs/heads/main') &&
+          steps.manual.conclusion == 'skipped'
+        id: release
+        env:
+          CURRENT_VERSION: ${{ steps.get-version.outputs.current_version }}
+        # Remove rc* from end of version string
+        # The ${string%%substring} syntax below deletes the longest match of $substring from back of $string.
+        run: |
+          poetry version ${CURRENT_VERSION%%rc*}
+          echo "APP_VERSION=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
+          echo "TARGET_ENV=OPS" >> $GITHUB_ENV
+
+      # Validate terraform files
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Validate podaac terraform
+        working-directory: terraform/
+        run: |
+          terraform init -backend=false
+          terraform validate -no-color
+
+      # SNYK IAC scan and report (as a blocking step)
+      - name: Run Snyk IAC to test and report
+        uses: snyk/actions/iac@master
+        env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: >
+              --org=${{ secrets.SNYK_ORG_ID }}
+              --severity-threshold=high
+              --report
+
+      - name: Commit version bump and define output
+        # If building an alpha, release candidate, or release then we commit the version bump back to the repo
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git commit -am "/version ${{ env.APP_VERSION }}"
+          git push
+
+      - name: Push tag
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "${{ env.APP_VERSION }}" -m "Version ${{ env.APP_VERSION }}"
+          git push origin "${{ env.APP_VERSION }}"
+
+      - name: Create GH release
+        if: |
+          steps.alpha.conclusion == 'success'   ||
+          steps.rc.conclusion == 'success'      ||
+          steps.release.conclusion == 'success'
+        uses: ncipollo/release-action@v1
+        with:
+          generateReleaseNotes: true
+          name: ${{ env.APP_VERSION }}
+          prerelease: ${{ steps.alpha.conclusion == 'success' || steps.rc.conclusion == 'success'}}
+          tag: ${{ env.APP_VERSION }}
+
+      - name: Save output
+        id: output
+        run: |
+          echo "app_version=${{ env.APP_VERSION }}" >> $GITHUB_OUTPUT
+          echo "target_env=${{ env.TARGET_ENV }}" >> $GITHUB_OUTPUT
+          echo "target_env_lowercase=${{ env.TARGET_ENV }}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy Terraform
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: [build]
+    env:
+      APP_VERSION: ${{ needs.build.outputs.app_version }}
+      TARGET_ENV: ${{ needs.build.outputs.target_env }}
+      TARGET_ENV_LOWERCASE: ${{ needs.build.outputs.target_env_lowercase }}
+    steps:
+      # Check out GitHub repo
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      # Configure credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV)] }}
+          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV)] }}
+          aws-region: us-west-2
+          mask-aws-account-id: true
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Set up Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Define TF_VAR values
+        run: |
+          echo "TF_VAR_hydrocron_api_key=${{ secrets['HYDROCRON_API_KEY'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_ec2_key_pair=${{ secrets[format('EC2_KEY_PAIR_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_sns_email_reports=${{ secrets[format('SNS_TOPIC_EMAIL_REPORTS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_sns_email_alarms=${{ secrets[format('SNS_TOPIC_EMAIL_ALARMS_{0}', env.TARGET_ENV)] }}" >> $GITHUB_ENV
+          echo "TF_VAR_lpdaac_username=${{ secrets['LPDAAC_USERNAME'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_lpdaac_password=${{ secrets['LPDAAC_PASSWORD'] }}" >> $GITHUB_ENV
+          echo "TF_VAR_app_version=${{ env.APP_VERSION }}" >> $GITHUB_ENV
+
+      - name: Initialize and deploy Terraform
+        working-directory: terraform/
+        run: ./bin/deploy.sh ${{ env.TARGET_ENV_LOWERCASE }} -auto-approve
+
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+        with:
+          version: v0.69.2
+          cache: true
+
+      - name: Sync Docker images
+        id: sync
+        run: python3 ./scripts/sync_docker_images.py
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: steps.sync.outputs.synced_images == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ../scans
